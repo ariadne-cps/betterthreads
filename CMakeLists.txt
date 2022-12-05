@@ -111,6 +111,4 @@ if(NOT TARGET betterthreads)
     add_subdirectory(submodules)
     target_link_libraries(betterthreads conclog ${CMAKE_THREAD_LIBS_INIT})
 
-    install(TARGETS betterthreads DESTINATION lib)
-    install(DIRECTORY include/ DESTINATION include/betterthreads FILES_MATCHING PATTERN "*.hpp")
 endif()
