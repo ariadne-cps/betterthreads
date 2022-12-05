@@ -36,49 +36,49 @@ class TestBuffer {
   public:
 
     void test_construct() {
-        Buffer<Nat> buffer(2);
-        ARIADNE_TEST_EQUALS(buffer.size(),0);
-        ARIADNE_TEST_EQUALS(buffer.capacity(),2);
+        Buffer<SizeType> buffer(2);
+        BETTERTHREADS_TEST_EQUALS(buffer.size(),0);
+        BETTERTHREADS_TEST_EQUALS(buffer.capacity(),2);
     }
 
     void test_construct_invalid() {
-        ARIADNE_TEST_FAIL(Buffer<Nat>(0));
+        BETTERTHREADS_TEST_FAIL(Buffer<SizeType>(0));
     }
 
     void test_set_capacity_when_empty() {
-        Buffer<Nat> buffer(2);
+        Buffer<SizeType> buffer(2);
         buffer.set_capacity(5);
-        ARIADNE_TEST_EQUALS(buffer.capacity(),5);
+        BETTERTHREADS_TEST_EQUALS(buffer.capacity(),5);
         buffer.set_capacity(3);
-        ARIADNE_TEST_EQUALS(buffer.capacity(),3);
-        ARIADNE_TEST_FAIL(buffer.set_capacity(0));
+        BETTERTHREADS_TEST_EQUALS(buffer.capacity(),3);
+        BETTERTHREADS_TEST_FAIL(buffer.set_capacity(0));
     }
 
     void test_set_capacity_when_filled() {
-        Buffer<Nat> buffer(2);
+        Buffer<SizeType> buffer(2);
         buffer.push(4);
         buffer.push(2);
-        ARIADNE_TEST_EXECUTE(buffer.set_capacity(5));
-        ARIADNE_TEST_FAIL(buffer.set_capacity(1));
+        BETTERTHREADS_TEST_EXECUTE(buffer.set_capacity(5));
+        BETTERTHREADS_TEST_FAIL(buffer.set_capacity(1));
         buffer.pull();
-        ARIADNE_TEST_EXECUTE(buffer.set_capacity(1));
+        BETTERTHREADS_TEST_EXECUTE(buffer.set_capacity(1));
     }
 
     void test_single_buffer() {
         Buffer<SizeType> buffer(2);
         buffer.push(4);
         buffer.push(2);
-        ARIADNE_TEST_EQUALS(buffer.size(),2);
+        BETTERTHREADS_TEST_EQUALS(buffer.size(),2);
         auto o1 = buffer.pull();
         auto o2 = buffer.pull();
-        ARIADNE_TEST_EQUALS(buffer.size(),0);
-        ARIADNE_TEST_EQUALS(o1,4);
-        ARIADNE_TEST_EQUALS(o2,2);
+        BETTERTHREADS_TEST_EQUALS(buffer.size(),0);
+        BETTERTHREADS_TEST_EQUALS(o1,4);
+        BETTERTHREADS_TEST_EQUALS(o2,2);
     }
 
     void test_io_buffer() {
-        Buffer<Nat> ib(2);
-        Buffer<Nat> ob(2);
+        Buffer<SizeType> ib(2);
+        Buffer<SizeType> ob(2);
 
         std::thread thread([&ib,&ob]() {
             while (true) {
@@ -93,29 +93,29 @@ class TestBuffer {
         ib.push(4);
         ib.push(2);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        ARIADNE_TEST_EQUALS(ib.size(),0);
-        ARIADNE_TEST_EQUALS(ob.size(),2);
+        BETTERTHREADS_TEST_EQUALS(ib.size(),0);
+        BETTERTHREADS_TEST_EQUALS(ob.size(),2);
         auto o1 = ob.pull();
-        ARIADNE_TEST_EQUALS(ob.size(),1);
-        ARIADNE_TEST_EQUALS(o1,4);
+        BETTERTHREADS_TEST_EQUALS(ob.size(),1);
+        BETTERTHREADS_TEST_EQUALS(o1,4);
         auto o2 = ob.pull();
-        ARIADNE_TEST_EQUALS(ob.size(),0);
-        ARIADNE_TEST_EQUALS(o2,2);
+        BETTERTHREADS_TEST_EQUALS(ob.size(),0);
+        BETTERTHREADS_TEST_EQUALS(o2,2);
         ib.interrupt_consuming();
         thread.join();
     }
 
     void test() {
-        ARIADNE_TEST_CALL(test_construct());
-        ARIADNE_TEST_CALL(test_construct_invalid());
-        ARIADNE_TEST_CALL(test_set_capacity_when_empty());
-        ARIADNE_TEST_CALL(test_set_capacity_when_filled());
-        ARIADNE_TEST_CALL(test_single_buffer());
-        ARIADNE_TEST_CALL(test_io_buffer());
+        BETTERTHREADS_TEST_CALL(test_construct());
+        BETTERTHREADS_TEST_CALL(test_construct_invalid());
+        BETTERTHREADS_TEST_CALL(test_set_capacity_when_empty());
+        BETTERTHREADS_TEST_CALL(test_set_capacity_when_filled());
+        BETTERTHREADS_TEST_CALL(test_single_buffer());
+        BETTERTHREADS_TEST_CALL(test_io_buffer());
     }
 };
 
 int main() {
     TestBuffer().test();
-    return ARIADNE_TEST_FAILURES;
+    return BETTERTHREADS_TEST_FAILURES;
 }

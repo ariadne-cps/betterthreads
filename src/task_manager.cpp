@@ -48,7 +48,7 @@ SizeType TaskManager::concurrency() const {
 }
 
 void TaskManager::set_concurrency(SizeType value) {
-    ARIADNE_PRECONDITION(value <= _maximum_concurrency);
+    BETTERTHREADS_PRECONDITION(value <= _maximum_concurrency);
     LockGuard<Mutex> lock(_concurrency_mutex);
     _concurrency = value;
     _pool.set_num_threads(value);
@@ -59,17 +59,17 @@ void TaskManager::set_maximum_concurrency() {
 }
 
 void TaskManager::set_logging_immediate_scheduler() const {
-    ARIADNE_PRECONDITION(_concurrency == 0)
+    BETTERTHREADS_PRECONDITION(_concurrency == 0)
     Logger::instance().use_immediate_scheduler();
 }
 
 void TaskManager::set_logging_blocking_scheduler() const {
-    ARIADNE_PRECONDITION(_concurrency == 0)
+    BETTERTHREADS_PRECONDITION(_concurrency == 0)
     Logger::instance().use_blocking_scheduler();
 }
 
 void TaskManager::set_logging_nonblocking_scheduler() const {
-    ARIADNE_PRECONDITION(_concurrency == 0)
+    BETTERTHREADS_PRECONDITION(_concurrency == 0)
     Logger::instance().use_nonblocking_scheduler();
 }
 

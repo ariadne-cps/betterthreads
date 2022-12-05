@@ -26,7 +26,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/*! \file concurrency/buffered_thread.hpp
+/*! \file buffered_thread.hpp
  *  \brief A wrapper for smart handling of a thread with a buffer for incoming tasks
  */
 
@@ -39,11 +39,8 @@
 #include <mutex>
 #include <atomic>
 #include <functional>
-#include "utility/typedefs.hpp"
-#include "utility/string.hpp"
-#include "utility/metaprogramming.hpp"
-#include "concurrency/buffer.hpp"
-#include "concurrency/concurrency_typedefs.hpp"
+#include "typedefs.hpp"
+#include "buffer.hpp"
 
 namespace BetterThreads {
 
@@ -74,7 +71,7 @@ class BufferedThread {
     SizeType queue_capacity() const;
     //! \brief Change the queue capacity
     //! \details Capacity cannot be changed to a value lower than the current size
-    Void set_queue_capacity(SizeType capacity);
+    void set_queue_capacity(SizeType capacity);
 
     //! \brief Destroy the instance
     ~BufferedThread();
@@ -84,8 +81,8 @@ class BufferedThread {
     ThreadId _id;
     std::thread _thread;
     Buffer<VoidFunction> _task_buffer;
-    Promise<Void> _got_id_promise;
-    Future<Void> _got_id_future;
+    Promise<void> _got_id_promise;
+    Future<void> _got_id_future;
 };
 
 template<class F, class... AS> auto BufferedThread::enqueue(F&& f, AS&&... args) -> Future<ResultOf<F(AS...)>>

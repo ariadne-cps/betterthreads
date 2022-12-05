@@ -34,7 +34,7 @@
 #define BETTERTHREADS_WORKLOAD_ADVANCEMENT_HPP
 
 #include <algorithm>
-#include "concurrency_typedefs.hpp"
+#include "typedefs.hpp"
 
 namespace BetterThreads {
 
@@ -54,17 +54,17 @@ class WorkloadAdvancement {
     SizeType total() const;
 
     //! \brief Add n elements to waiting
-    Void add_to_waiting(SizeType n = 1);
+    void add_to_waiting(SizeType n = 1);
     //! \brief Move n waiting to processing
-    Void add_to_processing(SizeType n = 1);
+    void add_to_processing(SizeType n = 1);
     //! \brief Move n processing to completed
-    Void add_to_completed(SizeType n = 1);
+    void add_to_completed(SizeType n = 1);
 
     //! \brief The rate of completion r (0<=r<=1) related to the progress
-    Double completion_rate() const;
+    double completion_rate() const;
 
     //! \brief If no other processing remains
-    Bool has_finished() const;
+    bool has_finished() const;
 
   private:
     SizeType _num_waiting;

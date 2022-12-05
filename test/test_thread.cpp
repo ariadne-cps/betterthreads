@@ -49,10 +49,10 @@ class TestThread {
 
     void test_create() const {
         Thread thread1([]{}, "thr");
-        ARIADNE_TEST_EXECUTE(thread1.id())
-        ARIADNE_TEST_EQUALS(thread1.name(),"thr")
+        BETTERTHREADS_TEST_EXECUTE(thread1.id())
+        BETTERTHREADS_TEST_EQUALS(thread1.name(),"thr")
         Thread thread2([]{});
-        ARIADNE_TEST_EQUALS(to_string(thread2.id()),thread2.name())
+        BETTERTHREADS_TEST_EQUALS(to_string(thread2.id()),thread2.name())
     }
 
     void test_destroy_before_completion() const {
@@ -63,37 +63,37 @@ class TestThread {
         int a = 0;
         Thread thread([&a] { a++; });
         std::this_thread::sleep_for(10ms);
-        ARIADNE_TEST_EQUALS(a,1)
-        ARIADNE_TEST_ASSERT(thread.exception() == nullptr)
+        BETTERTHREADS_TEST_EQUALS(a,1)
+        BETTERTHREADS_TEST_ASSERT(thread.exception() == nullptr)
     }
 
     void test_exception() const {
         Thread thread([] { throw new std::exception(); });
         std::this_thread::sleep_for(10ms);
-        ARIADNE_TEST_ASSERT(thread.exception() != nullptr)
+        BETTERTHREADS_TEST_ASSERT(thread.exception() != nullptr)
     }
 
     void test_atomic_multiple_threads() const {
         SizeType n_threads = 10*std::thread::hardware_concurrency();
-        ARIADNE_TEST_PRINT(n_threads)
+        BETTERTHREADS_TEST_PRINT(n_threads)
         List<SharedPointer<Thread>> threads;
 
         std::atomic<SizeType> a = 0;
         for (SizeType i=0; i<n_threads; ++i) {
-            threads.append(std::make_shared<Thread>([&a] { a++; }));
+            threads.push_back(std::make_shared<Thread>([&a] { a++; }));
         }
 
         std::this_thread::sleep_for(100ms);
-        ARIADNE_TEST_EQUALS(a,n_threads)
+        BETTERTHREADS_TEST_EQUALS(a,n_threads)
         threads.clear();
     }
 
     void test() {
-        ARIADNE_TEST_CALL(test_create())
-        ARIADNE_TEST_CALL(test_destroy_before_completion())
-        ARIADNE_TEST_CALL(test_task())
-        ARIADNE_TEST_CALL(test_exception())
-        ARIADNE_TEST_CALL(test_atomic_multiple_threads())
+        BETTERTHREADS_TEST_CALL(test_create())
+        BETTERTHREADS_TEST_CALL(test_destroy_before_completion())
+        BETTERTHREADS_TEST_CALL(test_task())
+        BETTERTHREADS_TEST_CALL(test_exception())
+        BETTERTHREADS_TEST_CALL(test_atomic_multiple_threads())
     }
 
 };
@@ -102,5 +102,5 @@ int main() {
     ThreadRegistry registry;
     ConcLog::Logger::instance().attach_thread_registry(&registry);
     TestThread().test();
-    return ARIADNE_TEST_FAILURES;
+    return BETTERTHREADS_TEST_FAILURES;
 }

@@ -34,7 +34,8 @@
 #define BETTERTHREADS_WORKLOAD_HPP
 
 #include <functional>
-#include "concurrency_typedefs.hpp"
+#include "typedefs.hpp"
+#include "conclog/progress_indicator.hpp"
 #include "workload_interface.hpp"
 #include "task_manager.hpp"
 #include "workload_advancement.hpp"
@@ -47,11 +48,11 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
   protected:
     WorkloadBase() : _progress_acknowledge_func(std::bind_front(&WorkloadBase::_default_progress_acknowledge, this)), _advancement(0), _logger_level(0), _progress_indicator(new ProgressIndicator(0)) { }
   public:
-    using TaskFunctionType = std::function<Void(E const &)>;
-    using ProgressAcknowledgeFunctionType = std::function<Void(E const &, SharedPointer<ProgressIndicator>)>;
+    using TaskFunctionType = std::function<void(E const &)>;
+    using ProgressAcknowledgeFunctionType = std::function<void(E const &, SharedPointer<ProgressIndicator>)>;
     using CompletelyBoundFunctionType = VoidFunction;
 
-    Void process() override {
+    void process() override {
         _log_scope_manager.reset(new LogScopeManager(BETTERTHREADS_PRETTY_FUNCTION,0));
         _logger_level = Logger::instance().current_level();
         while (true) {
@@ -89,9 +90,9 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
 
   private:
 
-    Bool _using_concurrency() const { return TaskManager::instance().concurrency() > 0; }
+    bool _using_concurrency() const { return TaskManager::instance().concurrency() > 0; }
 
-    Void _concurrent_task_wrapper(CompletelyBoundFunctionType const& task, CompletelyBoundFunctionType const& progress_acknowledge) {
+    void _concurrent_task_wrapper(CompletelyBoundFunctionType const& task, CompletelyBoundFunctionType const& progress_acknowledge) {
         _advancement.add_to_processing();
         if (_logger_level > Logger::instance().current_level()) Logger::instance().increase_level(_logger_level-Logger::instance().current_level());
         else Logger::instance().decrease_level(Logger::instance().current_level()-_logger_level);
@@ -131,7 +132,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
 
   protected:
 
-    Void _enqueue(E const& e) {
+    void _enqueue(E const& e) {
         if (_using_concurrency()) {
             _advancement.add_to_waiting();
             auto task = std::bind(std::forward<TaskFunctionType const>(_task_func), std::forward<E const&>(e));
@@ -157,9 +158,9 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
   private:
 
     // Queue of task-progress_acknowledge pairs for initial consumption and for consumption when using no concurrency
-    std::queue<Pair<CompletelyBoundFunctionType,CompletelyBoundFunctionType>> _sequential_queue;
+    std::queue<std::pair<CompletelyBoundFunctionType,CompletelyBoundFunctionType>> _sequential_queue;
 
-    Nat _logger_level; // The logger level to impose to the running threads
+    SizeType _logger_level; // The logger level to impose to the running threads
     SharedPointer<LogScopeManager> _log_scope_manager; // The scope manager required to properly hold print
     SharedPointer<ProgressIndicator> _progress_indicator; // The progress indicator to hold print
 
@@ -174,7 +175,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
 template<class E, class... AS>
 class StaticWorkload : public WorkloadBase<E,AS...> {
 public:
-    using TaskFunctionType = std::function<Void(E const&, AS...)>;
+    using TaskFunctionType = std::function<void(E const&, AS...)>;
 
     StaticWorkload(TaskFunctionType f, AS... as) : WorkloadBase<E, AS...>() {
         this->_task_func = std::bind(std::forward<TaskFunctionType const>(f), std::placeholders::_1, std::forward<AS>(as)...);
@@ -194,13 +195,13 @@ class DynamicWorkload : public WorkloadBase<E,AS...> {
     protected:
         Access(DynamicWorkload& parent) : _load(parent) { }
     public:
-        Void append(E const &e) { _load._enqueue(e); }
+        void append(E const &e) { _load._enqueue(e); }
     private:
         DynamicWorkload& _load;
     };
   public:
-    using TaskFunctionType = std::function<Void(DynamicWorkload<E,AS...>::Access&, E const&, AS...)>;
-    using ProgressAcknowledgeFunctionType = std::function<Void(E const&, SharedPointer<ProgressIndicator>)>;
+    using TaskFunctionType = std::function<void(DynamicWorkload<E,AS...>::Access&, E const&, AS...)>;
+    using ProgressAcknowledgeFunctionType = std::function<void(E const&, SharedPointer<ProgressIndicator>)>;
 
     DynamicWorkload(ProgressAcknowledgeFunctionType p, TaskFunctionType t, AS... as) : WorkloadBase<E, AS...>(), _access(Access(*this)) {
         this->_task_func = std::bind(std::forward<TaskFunctionType const>(t),

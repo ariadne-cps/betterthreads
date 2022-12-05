@@ -1,5 +1,5 @@
 /***************************************************************************
- *            concurrency_typedefs.hpp
+ *            utility.hpp
  *
  *  Copyright  2022  Luca Geretti
  *
@@ -26,32 +26,33 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/*! \file concurrency_typedefs.hpp
- *  \brief Typedefs for the module.
+/*! \file utility.hpp
+ *  \brief General utilities.
  */
 
-#ifndef BETTERTHREADS_CONCURRENCY_TYPEDEFS_HPP
-#define BETTERTHREADS_CONCURRENCY_TYPEDEFS_HPP
+#ifndef BETTERTHREADS_UTILITY_HPP
+#define BETTERTHREADS_UTILITY_HPP
 
+#include <sstream>
+#include <ostream>
 #include <utility>
-#include <mutex>
-#include <thread>
-#include <future>
-#include "typedefs.hpp"
 
 namespace BetterThreads {
 
-using ConditionVariable = std::condition_variable;
-using Mutex = std::mutex;
-template<class T> using LockGuard = std::lock_guard<T>;
-template<class T> using UniqueLock = std::unique_lock<T>;
-using ThreadId = std::thread::id;
-using VoidFunction = std::function<Void()>;
-template<class T> using Future = std::future<T>;
-template<class T> using Promise = std::promise<T>;
-template<class T> using PackagedTask = std::packaged_task<T>;
+template<class T> inline std::string to_string(const T& t) { std::stringstream ss; ss << t; return ss.str(); }
 
+template<class T1, class T2> constexpr std::pair<T1&,T2&> make_lpair(T1& t1, T2& t2) { return std::pair<T1&,T2&>(t1,t2); }
+
+template<class T> std::ostream& operator<<(std::ostream& os, const std::vector<T>& v) {
+    bool first=true;
+    for(auto x : v) {
+        os << (first ? "[" : ",") << x;
+        first = false;
+    }
+    if(first) { os << "["; }
+    return os << "]";
+}
 
 } // namespace BetterThreads
 
-#endif // BETTERTHREADS_CONCURRENCY_TYPEDEFS_HPP
+#endif // BETTERTHREADS_UTILITY_HPP

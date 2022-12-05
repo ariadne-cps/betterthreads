@@ -34,7 +34,7 @@
 #define BETTERTHREADS_WORKLOAD_INTERFACE_HPP
 
 #include <functional>
-#include "concurrency_typedefs.hpp"
+#include "typedefs.hpp"
 
 namespace BetterThreads {
 
@@ -49,7 +49,7 @@ class WorkloadInterface {
 public:
 
     //! \brief Process the given elements until completion
-    virtual Void process() = 0;
+    virtual void process() = 0;
 
     //! \brief The size of the workload, i.e., the number of tasks to process
     virtual SizeType size() const = 0;

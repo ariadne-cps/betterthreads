@@ -71,7 +71,7 @@ class ThreadPool {
     //! \details If reducing the current number, this method will block until
     //! all the previous tasks are completed, previous threads are destroyed
     //! and new threads are spawned
-    Void set_num_threads(SizeType number);
+    void set_num_threads(SizeType number);
 
     ~ThreadPool();
 
@@ -81,7 +81,7 @@ class ThreadPool {
     //! \details Takes \a i as the index of the thread in the list, for identification when stopping selectively
     VoidFunction _task_wrapper_function(SizeType i);
     //! \brief Append threads in the given range
-    Void _append_thread_range(SizeType lower, SizeType upper);
+    void _append_thread_range(SizeType lower, SizeType upper);
 
   private:
     const String _name;
@@ -90,13 +90,13 @@ class ThreadPool {
 
     mutable Mutex _task_availability_mutex;
     ConditionVariable _task_availability_condition;
-    Bool _finish_all_and_stop; // Wait till the queue is empty before stopping the thread, used for destruction
-    Nat _num_active_threads; // Down-counter for checking whether all the threads to stop have been stopped
-    Nat _num_threads_to_use; // Reference on the number of threads to use: if lower than the threads size, the last threads will stop
+    bool _finish_all_and_stop; // Wait till the queue is empty before stopping the thread, used for destruction
+    SizeType _num_active_threads; // Down-counter for checking whether all the threads to stop have been stopped
+    SizeType _num_threads_to_use; // Reference on the number of threads to use: if lower than the threads size, the last threads will stop
     mutable Mutex _num_active_threads_mutex;
     mutable Mutex _num_threads_mutex;
-    Promise<Void> _all_unused_threads_stopped_promise;
-    Future<Void> _all_unused_threads_stopped_future;
+    Promise<void> _all_unused_threads_stopped_promise;
+    Future<void> _all_unused_threads_stopped_future;
 };
 
 template<class F, class... AS>

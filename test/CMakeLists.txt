@@ -13,7 +13,7 @@ foreach(TEST ${UNIT_TESTS})
     if(COVERAGE)
         target_compile_options(${TEST} PUBLIC ${COVERAGE_COMPILER_FLAGS})
     endif()    
-    target_link_libraries(${TEST} ariadne)
+    target_link_libraries(${TEST} betterthreads)
     add_test(${TEST} ${TEST})
 endforeach()
 

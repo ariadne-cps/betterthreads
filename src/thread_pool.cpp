@@ -42,7 +42,7 @@ VoidFunction ThreadPool::_task_wrapper_function(SizeType i) {
     return [i, this] {
         while (true) {
             VoidFunction task;
-            Bool got_task = false;
+            bool got_task = false;
             {
                 UniqueLock<Mutex> lock(_task_availability_mutex);
                 _task_availability_condition.wait(lock, [=, this] {
@@ -66,9 +66,9 @@ VoidFunction ThreadPool::_task_wrapper_function(SizeType i) {
     };
 }
 
-Void ThreadPool::_append_thread_range(SizeType lower, SizeType upper) {
+void ThreadPool::_append_thread_range(SizeType lower, SizeType upper) {
     for (SizeType i=lower; i<upper; ++i) {
-        _threads.append(make_shared<Thread>(ThreadPool::_task_wrapper_function(i), construct_thread_name(_name,i,upper)));
+        _threads.push_back(make_shared<Thread>(ThreadPool::_task_wrapper_function(i), construct_thread_name(_name,i,upper)));
     }
 }
 
@@ -88,7 +88,7 @@ SizeType ThreadPool::num_threads() const {
     return _threads.size();
 }
 
-Void ThreadPool::set_num_threads(SizeType number) {
+void ThreadPool::set_num_threads(SizeType number) {
     LockGuard<Mutex> lock(_num_threads_mutex);
     auto old_size = _threads.size();
     _num_threads_to_use = number;
@@ -99,7 +99,7 @@ Void ThreadPool::set_num_threads(SizeType number) {
         _task_availability_condition.notify_all();
         _all_unused_threads_stopped_future.get();
         _threads.resize(number);
-        _all_unused_threads_stopped_promise = Promise<Void>();
+        _all_unused_threads_stopped_promise = Promise<void>();
         _all_unused_threads_stopped_future = _all_unused_threads_stopped_promise.get_future();
     }
 }

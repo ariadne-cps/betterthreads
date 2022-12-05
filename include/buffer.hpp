@@ -37,9 +37,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <queue>
-#include "utility/typedefs.hpp"
-#include "utility/macros.hpp"
-#include "concurrency_typedefs.hpp"
+#include "typedefs.hpp"
+#include "macros.hpp"
 
 namespace BetterThreads {
 
@@ -85,7 +84,7 @@ template<class E> class Buffer
     }
 
     //! \brief Change the capacity
-    Void set_capacity(SizeType capacity) {
+    void set_capacity(SizeType capacity) {
         BETTERTHREADS_PRECONDITION(capacity>0);
         BETTERTHREADS_ASSERT_MSG(capacity>=size(),"Reducing capacity below currenty buffer size is not allowed.");
         _capacity = capacity;
@@ -103,7 +102,7 @@ private:
     ConditionVariable cond;
     std::queue<E> _queue;
     std::atomic<SizeType> _capacity;
-    Bool _interrupt;
+    bool _interrupt;
 };
 
 } // namespace BetterThreads

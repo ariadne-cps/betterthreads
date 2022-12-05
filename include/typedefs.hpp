@@ -1,5 +1,5 @@
 /***************************************************************************
- *            thread.hpp
+ *            typedefs.hpp
  *
  *  Copyright  2022  Luca Geretti
  *
@@ -26,58 +26,43 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/*! \file thread.hpp
- *  \brief A wrapper for smart handling of a thread
+/*! \file typedefs.hpp
+ *  \brief General typedefs.
  */
 
-#ifndef BETTERTHREADS_THREAD_HPP
-#define BETTERTHREADS_THREAD_HPP
+#ifndef BETTERTHREADS_TYPEDEFS_HPP
+#define BETTERTHREADS_TYPEDEFS_HPP
 
 #include <utility>
+#include <vector>
+#include <mutex>
 #include <thread>
 #include <future>
-#include <mutex>
-#include <atomic>
-#include <functional>
-#include "utility.hpp"
-#include "macros.hpp"
+#include <memory>
+#include "conclog/logging.hpp"
 
 namespace BetterThreads {
 
-using ExceptionPtr = std::exception_ptr;
+template<class SIG> struct ResultOfTrait;
+template<class F, class... AS> struct ResultOfTrait<F(AS...)> { typedef typename std::invoke_result<F,AS...>::type Type; };
+template<class SIG> using ResultOf = typename ResultOfTrait<SIG>::Type;
 
-//! \brief A class for handling a thread for a pool in a smarter way.
-//! \details It allows to wait for the start of the \a task before extracting the thread id, which is held along with
-//! a readable \a name.
-class Thread {
-  public:
+using ConcLog::SizeType;
+using String = std::string;
+template<class T> using SharedPointer = std::shared_ptr<T>;
+template<class T> using List = std::vector<T>;
 
-    //! \brief Construct with an optional name.
-    //! \details The thread will start and store the id
-    Thread(VoidFunction task, String name = String());
+using ConditionVariable = std::condition_variable;
+using Mutex = std::mutex;
+template<class T> using LockGuard = std::lock_guard<T>;
+template<class T> using UniqueLock = std::unique_lock<T>;
+using ThreadId = std::thread::id;
+using VoidFunction = std::function<void()>;
+template<class T> using Future = std::future<T>;
+template<class T> using Promise = std::promise<T>;
+template<class T> using PackagedTask = std::packaged_task<T>;
 
-    //! \brief Get the thread id
-    ThreadId id() const;
-    //! \brief Get the readable name
-    String name() const;
-
-    //! \brief The exception, if it exists
-    ExceptionPtr const& exception() const;
-
-    //! \brief Destroy the instance
-    ~Thread();
-
-  private:
-    String _name;
-    ThreadId _id;
-    std::thread _thread;
-    Promise<void> _got_id_promise;
-    Future<void> _got_id_future;
-    Promise<void> _registered_thread_promise;
-    Future<void> _registered_thread_future;
-    ExceptionPtr _exception;
-};
 
 } // namespace BetterThreads
 
-#endif // BETTERTHREADS_THREAD_HPP
+#endif // BETTERTHREADS_TYPEDEFS_HPP

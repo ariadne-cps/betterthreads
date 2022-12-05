@@ -27,6 +27,7 @@
  */
 
 #include "conclog/logging.hpp"
+#include "utility.hpp"
 #include "buffered_thread.hpp"
 
 using namespace ConcLog;
@@ -67,7 +68,7 @@ SizeType BufferedThread::queue_capacity() const {
     return _task_buffer.capacity();
 }
 
-Void BufferedThread::set_queue_capacity(SizeType capacity) {
+void BufferedThread::set_queue_capacity(SizeType capacity) {
     return _task_buffer.set_capacity(capacity);
 }
 

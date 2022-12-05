@@ -80,7 +80,7 @@ endif()
 
 find_package(Threads REQUIRED)
 
-include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/submodules)
+include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/submodules/.symbolic)
 
 add_subdirectory(src)
 

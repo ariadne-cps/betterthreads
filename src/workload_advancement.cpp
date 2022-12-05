@@ -26,6 +26,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include "macros.hpp"
 #include "workload_advancement.hpp"
 
 namespace BetterThreads {
@@ -52,33 +53,33 @@ SizeType WorkloadAdvancement::total() const {
     return _num_waiting + _num_processing + _num_completed;
 }
 
-Void WorkloadAdvancement::add_to_waiting(SizeType n) {
-    ARIADNE_PRECONDITION(n > 0);
+void WorkloadAdvancement::add_to_waiting(SizeType n) {
+    BETTERTHREADS_PRECONDITION(n > 0);
     LockGuard<Mutex> lock(_mux);
     _num_waiting+=n;
 }
 
-Void WorkloadAdvancement::add_to_processing(SizeType n) {
-    ARIADNE_PRECONDITION(n <= _num_waiting);
+void WorkloadAdvancement::add_to_processing(SizeType n) {
+    BETTERTHREADS_PRECONDITION(n <= _num_waiting);
     LockGuard<Mutex> lock(_mux);
     _num_waiting-=n;
     _num_processing+=n;
 }
 
-Void WorkloadAdvancement::add_to_completed(SizeType n) {
-    ARIADNE_PRECONDITION(n <=_num_processing);
+void WorkloadAdvancement::add_to_completed(SizeType n) {
+    BETTERTHREADS_PRECONDITION(n <=_num_processing);
     LockGuard<Mutex> lock(_mux);
     _num_processing-=n;
     _num_completed+=n;
 }
 
-Double WorkloadAdvancement::completion_rate() const {
+double WorkloadAdvancement::completion_rate() const {
     LockGuard<Mutex> lock(_mux);
-    Double total = _num_waiting + _num_processing + _num_completed;
-    return ((Double)_num_completed) / total;
+    double total = _num_waiting + _num_processing + _num_completed;
+    return ((double)_num_completed) / total;
 }
 
-Bool WorkloadAdvancement::has_finished() const {
+bool WorkloadAdvancement::has_finished() const {
     LockGuard<Mutex> lock(_mux);
     return _num_processing == 0 and _num_waiting == 0;
 }
