@@ -44,7 +44,7 @@ BufferedThread::BufferedThread(String name)
             try {
                 VoidFunction task = _task_buffer.pull();
                 task();
-            } catch(BufferInterruptPullingException& e) { return; }
+            } catch(BufferInterruptPullingException&) { return; }
         }
     });
     _got_id_future.get();
