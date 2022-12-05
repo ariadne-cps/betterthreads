@@ -24,9 +24,9 @@ jobs:
             cxx: "clang++"
           }
           - {
-            name: "macOS 12.0 GCC 10 [Release]",
+            name: "macOS 12.0 GCC 12 [Release]",
             os: macos-12,
-            cxx: "g++-10"
+            cxx: "g++-12"
           }
           - {
             name: "Ubuntu 22.04 Clang 11 [Release]",
@@ -59,7 +59,7 @@ jobs:
     - name: Set Up macOS Dependencies
       if: runner.os == 'macOS'
       run: |
-        brew install ninja gcc@10
+        brew install ninja gcc@12
         export PKG_CONFIG_PATH=/usr/local/opt/libffi/lib/pkgconfig
 
     - name: Set Up Linux Dependencies
