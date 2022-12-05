@@ -26,6 +26,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <functional>
 #include "workload.hpp"
 #include "test.hpp"
 
@@ -86,6 +87,7 @@ class TestWorkload {
         TaskManager::instance().set_concurrency(0);
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &square_and_store, result);
+        BETTERTHREADS_TEST_EQUALS(wl.size(),0)
     }
 
     void test_append() {
