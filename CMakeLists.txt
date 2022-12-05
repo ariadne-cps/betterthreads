@@ -50,19 +50,47 @@ message(STATUS "long int size: ${SIZEOF_LONG_INT}")
 check_type_size("long long int" SIZEOF_LONG_LONG_INT)
 message(STATUS "long long int size: ${SIZEOF_LONG_LONG_INT}")
 
+find_package(Git)
+if(GIT_FOUND)
+    if (NOT EXISTS ${PROJECT_SOURCE_DIR}/.git) # Manages the case when an archive is used
+        execute_process(COMMAND git init WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_QUIET ERROR_QUIET)
+        execute_process(COMMAND rm -Rf ${PROJECT_SOURCE_DIR}/submodules/conclog OUTPUT_QUIET ERROR_QUIET)
+        execute_process(COMMAND git submodule add -f https://github.com/ariadne-cps/conclog submodules/conclog WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_QUIET ERROR_QUIET)
+    endif()
+    message(STATUS "Getting all submodules if not downloaded already...")
+    execute_process(COMMAND git submodule update --init --recursive WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_QUIET ERROR_QUIET)
+    if(NOT EXISTS ${PROJECT_SOURCE_DIR}/submodules/conclog/CMakeLists.txt)
+        message(ERROR "ConcLog download failure")
+    else()
+        message(STATUS "ConcLog submodule found")
+    endif()
+else()
+    message(FATAL_ERROR "Git not found, no submodules could be downloaded")
+endif()
+
+if (NOT EXISTS ${PROJECT_SOURCE_DIR}/submodules/.symbolic)
+    execute_process(COMMAND mkdir ${PROJECT_SOURCE_DIR}/submodules/.symbolic)
+    message(STATUS "Created symbolic links directory for submodules")
+endif()
+
+if (NOT EXISTS ${PROJECT_SOURCE_DIR}/submodules/.symbolic/conclog)
+    execute_process(COMMAND ln -s ${PROJECT_SOURCE_DIR}/submodules/conclog/include ${PROJECT_SOURCE_DIR}/submodules/.symbolic/conclog)
+    message(STATUS "Created symbolic link to ConcLog submodule")
+endif()
+
 find_package(Threads REQUIRED)
 
-include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/dependencies)
+include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/submodules)
 
 add_subdirectory(src)
 
 enable_testing()
 add_subdirectory(test)
 
-add_subdirectory(dependencies)
+add_subdirectory(submodules)
 
 add_library(betterthreads ${LIBRARY_KIND} $<TARGET_OBJECTS:BETTERTHREADS_SRC>)
-target_link_libraries(opera conclog ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(betterthreads conclog ${CMAKE_THREAD_LIBS_INIT})
 
 if(NOT TARGET coverage_config)
     add_library(coverage_config INTERFACE)

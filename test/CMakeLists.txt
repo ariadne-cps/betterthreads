@@ -17,4 +17,5 @@ foreach(TEST ${UNIT_TESTS})
     add_test(${TEST} ${TEST})
 endforeach()
 
+add_custom_target(tests)
 add_dependencies(tests ${UNIT_TESTS})
