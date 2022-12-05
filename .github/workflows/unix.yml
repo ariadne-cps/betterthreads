@@ -19,8 +19,8 @@ jobs:
       matrix:
         config:
           - {
-            name: "macOS 11.0 AppleClang 12 [Release]",
-            os: macos-11.0,
+            name: "macOS 12.0 AppleClang 14 [Release]",
+            os: macos-12,
             cxx: "clang++"
           }
           - {
