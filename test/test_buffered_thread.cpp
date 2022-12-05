@@ -115,7 +115,7 @@ class TestBufferedThread {
         int x = 3;
         int y = 5;
         BufferedThread thread;
-        auto future = thread.enqueue([](int x, int y) { return x * y; }, x, y);
+        auto future = thread.enqueue([](int a, int b) { return a * b; }, x, y);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         auto r = future.get();
         BETTERTHREADS_TEST_EQUALS(r,15);
