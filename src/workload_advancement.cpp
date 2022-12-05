@@ -75,8 +75,8 @@ void WorkloadAdvancement::add_to_completed(SizeType n) {
 
 double WorkloadAdvancement::completion_rate() const {
     LockGuard<Mutex> lock(_mux);
-    double total = _num_waiting + _num_processing + _num_completed;
-    return ((double)_num_completed) / total;
+    auto total = static_cast<double>(_num_waiting + _num_processing + _num_completed);
+    return static_cast<double>(_num_completed) / total;
 }
 
 bool WorkloadAdvancement::has_finished() const {
