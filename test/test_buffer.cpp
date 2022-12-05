@@ -85,7 +85,7 @@ class TestBuffer {
                 try {
                     auto i = ib.pull();
                     ob.push(i);
-                } catch (BufferInterruptPullingException& e) {
+                } catch (BufferInterruptPullingException&) {
                     break;
                 }
             }
