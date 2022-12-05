@@ -34,6 +34,7 @@
 #define BETTERTHREADS_WORKLOAD_HPP
 
 #include <functional>
+#include <iomanip>
 #include "typedefs.hpp"
 #include "conclog/progress_indicator.hpp"
 #include "workload_interface.hpp"
