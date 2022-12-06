@@ -1,5 +1,8 @@
 set(LIBRARY_NAME BETTERTHREADS_SRC)
 
+include(CodeCoverage)
+append_coverage_compiler_flags()
+
 add_library(${LIBRARY_NAME} OBJECT
         thread.cpp
         buffered_thread.cpp
