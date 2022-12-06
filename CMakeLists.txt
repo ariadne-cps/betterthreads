@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.9)
 
 project(BetterThreads VERSION 1.0)
 
+option(COVERAGE "Enable coverage reporting" OFF)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.20)
         message(FATAL_ERROR "MSVC version must be at least 19.20!")
@@ -92,7 +94,6 @@ if(NOT TARGET betterthreads)
     endif()
 
     if(NOT TARGET tests)
-        option(COVERAGE "Enable coverage reporting" OFF)
         if(COVERAGE)
             message(STATUS "Enabled coverage reporting")
             target_compile_options(coverage_config INTERFACE -O0 -g --coverage)
