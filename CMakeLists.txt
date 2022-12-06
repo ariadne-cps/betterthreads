@@ -91,12 +91,12 @@ if(NOT TARGET betterthreads)
 
     add_library(betterthreads ${LIBRARY_KIND} $<TARGET_OBJECTS:BETTERTHREADS_SRC>)
 
-    if(COVERAGE)
-        include(CodeCoverage)
-        append_coverage_compiler_flags()
-    endif()
-
     if(NOT TARGET tests)
+        if(COVERAGE)
+            include(CodeCoverage)
+            append_coverage_compiler_flags()
+        endif()
+
         enable_testing()
         add_subdirectory(test)
     endif()
