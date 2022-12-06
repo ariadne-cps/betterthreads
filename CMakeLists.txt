@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.9)
 
 project(BetterThreads VERSION 1.0)
 
+option(COVERAGE "Enable coverage reporting" OFF)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
@@ -89,11 +91,12 @@ if(NOT TARGET betterthreads)
 
     add_library(betterthreads ${LIBRARY_KIND} $<TARGET_OBJECTS:BETTERTHREADS_SRC>)
 
-    include(CodeCoverage)
-    append_coverage_compiler_flags()
+    if(COVERAGE)
+        include(CodeCoverage)
+        append_coverage_compiler_flags()
+    endif()
 
     if(NOT TARGET tests)
-
         enable_testing()
         add_subdirectory(test)
     endif()
