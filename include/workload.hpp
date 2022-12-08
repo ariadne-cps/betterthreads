@@ -201,12 +201,12 @@ class DynamicWorkload : public WorkloadBase<E,AS...> {
         DynamicWorkload& _load;
     };
   public:
-    using TaskFunctionType = std::function<void(DynamicWorkload<E,AS...>::Access&, E const&, AS...)>;
+    using TaskFunctionType = std::function<void(Access&, E const&, AS...)>;
     using ProgressAcknowledgeFunctionType = std::function<void(E const&, SharedPointer<ProgressIndicator>)>;
 
     DynamicWorkload(ProgressAcknowledgeFunctionType p, TaskFunctionType t, AS... as) : WorkloadBase<E, AS...>(), _access(Access(*this)) {
         this->_task_func = std::bind(std::forward<TaskFunctionType const>(t),
-                                     std::forward<DynamicWorkload<E,AS...>::Access const&>(_access),
+                                     std::forward<Access const&>(_access),
                                      std::placeholders::_1,
                                      std::forward<AS>(as)...);
         this->_progress_acknowledge_func = p;
