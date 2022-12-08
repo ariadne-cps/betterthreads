@@ -97,7 +97,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
         _advancement.add_to_processing();
         if (_logger_level > Logger::instance().current_level()) Logger::instance().increase_level(_logger_level-Logger::instance().current_level());
         else Logger::instance().decrease_level(Logger::instance().current_level()-_logger_level);
-        //Logger::instance().set_level(_logger_level);
+
         if (not Logger::instance().is_muted_at(0)) { progress_acknowledge(); _print_hold(); }
         try {
             task();
@@ -117,8 +117,8 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
     }
 
     void _default_progress_acknowledge(E const& e, SharedPointer<ProgressIndicator> indicator) {
-        indicator->update_current(_advancement.completed());
-        indicator->update_final(_advancement.total());
+        indicator->update_current(static_cast<double>(_advancement.completed()));
+        indicator->update_final(static_cast<double>(_advancement.total()));
     }
 
     void _print_hold() {
@@ -161,7 +161,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
     // Queue of task-progress_acknowledge pairs for initial consumption and for consumption when using no concurrency
     std::queue<std::pair<CompletelyBoundFunctionType,CompletelyBoundFunctionType>> _sequential_queue;
 
-    SizeType _logger_level; // The logger level to impose to the running threads
+    unsigned int _logger_level; // The logger level to impose to the running threads
     SharedPointer<LogScopeManager> _log_scope_manager; // The scope manager required to properly hold print
     SharedPointer<ProgressIndicator> _progress_indicator; // The progress indicator to hold print
 
