@@ -19,24 +19,39 @@ jobs:
       matrix:
         config:
           - {
-            name: "macOS 12.0 AppleClang 14 [Release]",
+            name: "macOS 12 AppleClang 14 [Release]",
             os: macos-12,
-            cxx: "clang++"
+            cxx-cmd: "clang++"
           }
           - {
-            name: "macOS 11.0 GCC 10 [Release]",
+            name: "macOS 11 GCC 11 [Release]",
             os: macos-11,
-            cxx: "g++-10"
+            cxx-pkg: "gcc@11",
+            cxx-cmd: "g++-11"
           }
           - {
             name: "Ubuntu 22.04 Clang 11 [Release]",
             os: ubuntu-22.04,
-            cxx: "clang++-11"
+            cxx-pkg: "clang-11",
+            cxx-cmd: "clang++-11"
+          }
+          - {
+            name: "Ubuntu 22.04 Clang 14 [Release]",
+            os: ubuntu-22.04,
+            cxx-pkg: "clang-14",
+            cxx-cmd: "clang++-14"
           }
           - {
             name: "Ubuntu 22.04 GCC 10 [Release]",
             os: ubuntu-22.04,
-            cxx: "g++-10"
+            cxx-pkg: "g++-10",
+            cxx-cmd: "g++-10"
+          }
+          - {
+            name: "Ubuntu 22.04 GCC 11 [Release]",
+            os: ubuntu-22.04,
+            cxx-pkg: "g++-11",
+            cxx-cmd: "g++-11"
           }
 
     steps:
@@ -59,19 +74,19 @@ jobs:
     - name: Set Up macOS Dependencies
       if: runner.os == 'macOS'
       run: |
-        brew install ninja gcc@10
+        brew install ninja ${{matrix.config.cxx-pkg}}
         export PKG_CONFIG_PATH=/usr/local/opt/libffi/lib/pkgconfig
 
     - name: Set Up Linux Dependencies
       if: runner.os == 'Linux'
-      run: sudo apt install -y cmake ninja-build pkg-config clang-11 g++-10
+      run: sudo apt install -y cmake ninja-build pkg-config ${{matrix.config.cxx-pkg}}
 
     - name: Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build
 
     - name: Configure CMake
       working-directory: ${{runner.workspace}}/build
-      run: cmake ${{runner.workspace}}/betterthreads -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=${{matrix.config.cxx}} -G Ninja
+      run: cmake ${{runner.workspace}}/betterthreads -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=${{matrix.config.cxx-cmd}} -G Ninja
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
