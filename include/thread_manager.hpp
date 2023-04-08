@@ -30,8 +30,8 @@
  *  \brief Singleton class for managing tasks across the library
  */
 
-#ifndef BETTERTHREADS_TASK_MANAGER_HPP
-#define BETTERTHREADS_TASK_MANAGER_HPP
+#ifndef BETTERTHREADS_THREAD_MANAGER_HPP
+#define BETTERTHREADS_THREAD_MANAGER_HPP
 
 #include <algorithm>
 #include "conclog/logging.hpp"
@@ -110,4 +110,4 @@ template<class F, class... AS> auto TaskManager::enqueue(F &&f, AS &&... args) -
 
 } // namespace BetterThreads
 
-#endif // BETTERTHREADS_TASK_MANAGER_HPP
+#endif // BETTERTHREADS_THREAD_MANAGER_HPP

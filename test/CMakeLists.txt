@@ -3,7 +3,7 @@ set(UNIT_TESTS
     test_buffered_thread
     test_thread
     test_thread_pool
-    test_task_manager
+    test_thread_manager
     test_workload_advancement
     test_workload
 )

@@ -5,7 +5,7 @@ add_library(${LIBRARY_NAME} OBJECT
         buffered_thread.cpp
         thread_pool.cpp
         workload_advancement.cpp
-        task_manager.cpp
+        thread_manager.cpp
         )
 
 if(COVERAGE)

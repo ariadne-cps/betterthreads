@@ -27,7 +27,7 @@
  */
 
 #include <thread>
-#include "task_manager.hpp"
+#include "thread_manager.hpp"
 #include "test.hpp"
 
 using namespace BetterThreads;

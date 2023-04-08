@@ -28,7 +28,7 @@
 
 #include "macros.hpp"
 #include "conclog/logging.hpp"
-#include "task_manager.hpp"
+#include "thread_manager.hpp"
 
 namespace BetterThreads {
 

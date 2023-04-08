@@ -38,7 +38,7 @@
 #include "typedefs.hpp"
 #include "conclog/progress_indicator.hpp"
 #include "workload_interface.hpp"
-#include "task_manager.hpp"
+#include "thread_manager.hpp"
 #include "workload_advancement.hpp"
 
 namespace BetterThreads {
