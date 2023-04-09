@@ -116,6 +116,6 @@ if(NOT TARGET betterthreads)
     endif()
 
     add_subdirectory(submodules)
-    target_link_libraries(betterthreads conclog ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(betterthreads conclog utility ${CMAKE_THREAD_LIBS_INIT})
 
 endif()
