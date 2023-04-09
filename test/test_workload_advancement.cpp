@@ -27,7 +27,6 @@
  */
 
 #include "utility/test.hpp"
-#include "utility/macros.hpp"
 #include "workload_advancement.hpp"
 
 using namespace BetterThreads;
