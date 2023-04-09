@@ -34,6 +34,7 @@
 #define BETTERTHREADS_WORKLOAD_ADVANCEMENT_HPP
 
 #include <algorithm>
+#include <mutex>
 
 namespace BetterThreads {
 
