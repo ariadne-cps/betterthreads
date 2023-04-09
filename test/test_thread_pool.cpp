@@ -26,10 +26,10 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "thread_pool.hpp"
+#include "utility/test.hpp"
 #include "conclog/logging.hpp"
 #include "conclog/thread_registry_interface.hpp"
-#include "test.hpp"
+#include "thread_pool.hpp"
 
 using namespace BetterThreads;
 
@@ -48,46 +48,46 @@ class TestSmartThreadPool {
   public:
 
     void test_construct_thread_name() const {
-        BETTERTHREADS_TEST_EQUALS(construct_thread_name("name",9,9),"name9");
-        BETTERTHREADS_TEST_EQUALS(construct_thread_name("name",9,10),"name09");
-        BETTERTHREADS_TEST_EQUALS(construct_thread_name("name",10,11),"name10");
+        UTILITY_TEST_EQUALS(construct_thread_name("name",9,9),"name9");
+        UTILITY_TEST_EQUALS(construct_thread_name("name",9,10),"name09");
+        UTILITY_TEST_EQUALS(construct_thread_name("name",10,11),"name10");
     }
 
     void test_construct() {
         auto max_concurrency = std::thread::hardware_concurrency();
         ThreadPool pool(max_concurrency);
-        BETTERTHREADS_TEST_EQUALS(pool.num_threads(),max_concurrency);
-        BETTERTHREADS_TEST_EQUALS(pool.queue_size(),0);
+        UTILITY_TEST_EQUALS(pool.num_threads(),max_concurrency);
+        UTILITY_TEST_EQUALS(pool.queue_size(),0);
     }
 
     void test_construct_empty() {
         ThreadPool pool(0);
-        BETTERTHREADS_TEST_EQUALS(pool.num_threads(),0);
+        UTILITY_TEST_EQUALS(pool.num_threads(),0);
         VoidFunction fn([]{ std::this_thread::sleep_for(100ms); });
         pool.enqueue(fn);
-        BETTERTHREADS_TEST_EQUALS(pool.queue_size(),1);
+        UTILITY_TEST_EQUALS(pool.queue_size(),1);
     }
 
     void test_construct_with_name() {
         ThreadPool pool(1);
-        BETTERTHREADS_TEST_EQUALS(pool.name(),THREAD_POOL_DEFAULT_NAME);
+        UTILITY_TEST_EQUALS(pool.name(),THREAD_POOL_DEFAULT_NAME);
         ThreadPool pool2(1,"name");
-        BETTERTHREADS_TEST_EQUALS(pool2.name(),"name");
+        UTILITY_TEST_EQUALS(pool2.name(),"name");
     }
 
     void test_execute_single() {
         ThreadPool pool(1);
-        BETTERTHREADS_TEST_EQUALS(pool.num_threads(),1);
+        UTILITY_TEST_EQUALS(pool.num_threads(),1);
         VoidFunction fn([]{ std::this_thread::sleep_for(100ms); });
         pool.enqueue(fn);
         std::this_thread::sleep_for(200ms);
-        BETTERTHREADS_TEST_EQUALS(pool.queue_size(),0);
+        UTILITY_TEST_EQUALS(pool.queue_size(),0);
     }
 
     void test_exception() {
         ThreadPool pool(1);
         auto future = pool.enqueue([]{ throw new std::exception(); });
-        BETTERTHREADS_TEST_FAIL(future.get());
+        UTILITY_TEST_FAIL(future.get());
     }
 
     void test_destroy_before_completion() {
@@ -97,76 +97,76 @@ class TestSmartThreadPool {
 
     void test_execute_multiple_sequentially() {
         ThreadPool pool(1);
-        BETTERTHREADS_TEST_EQUALS(pool.num_threads(),1);
-        BETTERTHREADS_TEST_EQUALS(pool.queue_size(),0);
+        UTILITY_TEST_EQUALS(pool.num_threads(),1);
+        UTILITY_TEST_EQUALS(pool.queue_size(),0);
         VoidFunction fn([]{ std::this_thread::sleep_for(100ms); });
-        for (SizeType i=0; i<2; ++i) pool.enqueue(fn);
-        BETTERTHREADS_TEST_ASSERT(pool.queue_size() > 0);
+        for (size_t i=0; i<2; ++i) pool.enqueue(fn);
+        UTILITY_TEST_ASSERT(pool.queue_size() > 0);
         std::this_thread::sleep_for(400ms);
-        BETTERTHREADS_TEST_EQUALS(pool.queue_size(),0);
+        UTILITY_TEST_EQUALS(pool.queue_size(),0);
     }
 
     void test_execute_multiple_concurrently() {
-        SizeType num_threads = 2;
+        size_t num_threads = 2;
         ThreadPool pool(num_threads);
-        BETTERTHREADS_TEST_EQUALS(pool.num_threads(),2);
+        UTILITY_TEST_EQUALS(pool.num_threads(),2);
         VoidFunction fn([]{ std::this_thread::sleep_for(100ms); });
-        for (SizeType i=0; i<2; ++i) pool.enqueue(fn);
+        for (size_t i=0; i<2; ++i) pool.enqueue(fn);
         std::this_thread::sleep_for(std::chrono::milliseconds(400*num_threads));
     }
 
     void test_execute_multiple_concurrently_sequentially() {
-        SizeType num_threads = 2;
+        size_t num_threads = 2;
         ThreadPool pool(num_threads);
         VoidFunction fn([]{ std::this_thread::sleep_for(100ms); });
-        for (SizeType i=0; i<2*num_threads; ++i) pool.enqueue(fn);
-        BETTERTHREADS_TEST_ASSERT(pool.queue_size() > 0);
+        for (size_t i=0; i<2*num_threads; ++i) pool.enqueue(fn);
+        UTILITY_TEST_ASSERT(pool.queue_size() > 0);
         std::this_thread::sleep_for(std::chrono::milliseconds(400*num_threads));
-        BETTERTHREADS_TEST_EQUALS(pool.queue_size(),0);
+        UTILITY_TEST_EQUALS(pool.queue_size(),0);
     }
 
     void test_process_on_atomic_type() {
         auto max_concurrency = std::thread::hardware_concurrency();
         ThreadPool pool(max_concurrency);
-        std::vector<Future<SizeType>> results;
-        std::atomic<SizeType> x;
+        std::vector<future<size_t>> results;
+        std::atomic<size_t> x;
 
-        for (SizeType i = 0; i < 2 * max_concurrency; ++i) {
+        for (size_t i = 0; i < 2 * max_concurrency; ++i) {
             results.emplace_back(pool.enqueue([&x] {
-                                     SizeType r = ++x;
+                                     size_t r = ++x;
                                      return r * r;
                                  })
             );
         }
         std::this_thread::sleep_for(100ms);
-        BETTERTHREADS_TEST_EQUALS(x,2*max_concurrency);
+        UTILITY_TEST_EQUALS(x,2*max_concurrency);
 
-        SizeType actual_sum = 0, expected_sum = 0;
-        for (SizeType i = 0; i < 2 * max_concurrency; ++i) {
+        size_t actual_sum = 0, expected_sum = 0;
+        for (size_t i = 0; i < 2 * max_concurrency; ++i) {
             actual_sum += results[i].get();
             expected_sum += (i+1)*(i+1);
         }
-        BETTERTHREADS_TEST_EQUAL(actual_sum,expected_sum);
+        UTILITY_TEST_EQUAL(actual_sum,expected_sum);
     }
 
     void test_set_num_threads_up_statically() const {
         ThreadPool pool(0);
-        BETTERTHREADS_TEST_EXECUTE(pool.set_num_threads(1));
-        BETTERTHREADS_TEST_EQUALS(pool.num_threads(),1);
-        BETTERTHREADS_TEST_EXECUTE(pool.set_num_threads(3));
-        BETTERTHREADS_TEST_EQUALS(pool.num_threads(),3);
+        UTILITY_TEST_EXECUTE(pool.set_num_threads(1));
+        UTILITY_TEST_EQUALS(pool.num_threads(),1);
+        UTILITY_TEST_EXECUTE(pool.set_num_threads(3));
+        UTILITY_TEST_EQUALS(pool.num_threads(),3);
     }
 
     void test_set_num_threads_same_statically() const {
         ThreadPool pool(3);
-        BETTERTHREADS_TEST_EXECUTE(pool.set_num_threads(3));
-        BETTERTHREADS_TEST_EQUALS(pool.num_threads(),3);
+        UTILITY_TEST_EXECUTE(pool.set_num_threads(3));
+        UTILITY_TEST_EQUALS(pool.num_threads(),3);
     }
 
     void test_set_num_threads_down_statically() const {
         ThreadPool pool(3);
-        BETTERTHREADS_TEST_EXECUTE(pool.set_num_threads(1));
-        BETTERTHREADS_TEST_EQUAL(pool.num_threads(),1);
+        UTILITY_TEST_EXECUTE(pool.set_num_threads(1));
+        UTILITY_TEST_EQUAL(pool.num_threads(),1);
     }
 
     void test_set_num_threads_up_dynamically() const {
@@ -174,57 +174,57 @@ class TestSmartThreadPool {
         VoidFunction fn([] { std::this_thread::sleep_for(100ms); });
         pool.enqueue(fn);
         std::this_thread::sleep_for(100ms);
-        BETTERTHREADS_TEST_EQUALS(pool.queue_size(),1);
-        BETTERTHREADS_TEST_EXECUTE(pool.set_num_threads(1));
-        BETTERTHREADS_TEST_EQUALS(pool.num_threads(),1);
+        UTILITY_TEST_EQUALS(pool.queue_size(),1);
+        UTILITY_TEST_EXECUTE(pool.set_num_threads(1));
+        UTILITY_TEST_EQUALS(pool.num_threads(),1);
         std::this_thread::sleep_for(100ms);
-        BETTERTHREADS_TEST_EQUALS(pool.queue_size(),0);
+        UTILITY_TEST_EQUALS(pool.queue_size(),0);
         pool.enqueue(fn);
         pool.enqueue(fn);
-        BETTERTHREADS_TEST_EXECUTE(pool.set_num_threads(3));
-        BETTERTHREADS_TEST_EQUALS(pool.num_threads(),3);
+        UTILITY_TEST_EXECUTE(pool.set_num_threads(3));
+        UTILITY_TEST_EQUALS(pool.num_threads(),3);
     }
 
     void test_set_num_threads_down_dynamically() const {
         ThreadPool pool(3);
         VoidFunction fn([] { std::this_thread::sleep_for(100ms); });
-        for (SizeType i=0; i<5; ++i)
+        for (size_t i=0; i<5; ++i)
             pool.enqueue(fn);
-        BETTERTHREADS_TEST_EXECUTE(pool.set_num_threads(2));
-        BETTERTHREADS_TEST_EQUAL(pool.num_threads(),2);
+        UTILITY_TEST_EXECUTE(pool.set_num_threads(2));
+        UTILITY_TEST_EQUAL(pool.num_threads(),2);
         std::this_thread::sleep_for(200ms);
-        BETTERTHREADS_TEST_EQUALS(pool.queue_size(),0);
+        UTILITY_TEST_EQUALS(pool.queue_size(),0);
     }
 
     void test_set_num_threads_to_zero_dynamically() const {
         ThreadPool pool(3);
         VoidFunction fn([] { std::this_thread::sleep_for(100ms); });
-        for (SizeType i=0; i<5; ++i)
+        for (size_t i=0; i<5; ++i)
             pool.enqueue(fn);
-        BETTERTHREADS_TEST_EXECUTE(pool.set_num_threads(0));
-        BETTERTHREADS_TEST_EQUAL(pool.num_threads(),0);
+        UTILITY_TEST_EXECUTE(pool.set_num_threads(0));
+        UTILITY_TEST_EQUAL(pool.num_threads(),0);
         std::this_thread::sleep_for(100ms);
-        BETTERTHREADS_TEST_ASSERT(pool.queue_size() > 0);
+        UTILITY_TEST_ASSERT(pool.queue_size() > 0);
     }
 
     void test() {
-        BETTERTHREADS_TEST_CALL(test_construct_thread_name());
-        BETTERTHREADS_TEST_CALL(test_construct());
-        BETTERTHREADS_TEST_CALL(test_construct_empty());
-        BETTERTHREADS_TEST_CALL(test_construct_with_name());
-        BETTERTHREADS_TEST_CALL(test_execute_single());
-        BETTERTHREADS_TEST_CALL(test_exception());
-        BETTERTHREADS_TEST_CALL(test_destroy_before_completion());
-        BETTERTHREADS_TEST_CALL(test_execute_multiple_sequentially());
-        BETTERTHREADS_TEST_CALL(test_execute_multiple_concurrently());
-        BETTERTHREADS_TEST_CALL(test_execute_multiple_concurrently_sequentially());
-        BETTERTHREADS_TEST_CALL(test_process_on_atomic_type());
-        BETTERTHREADS_TEST_CALL(test_set_num_threads_up_statically());
-        BETTERTHREADS_TEST_CALL(test_set_num_threads_same_statically());
-        BETTERTHREADS_TEST_CALL(test_set_num_threads_down_statically());
-        BETTERTHREADS_TEST_CALL(test_set_num_threads_up_dynamically());
-        BETTERTHREADS_TEST_CALL(test_set_num_threads_down_dynamically());
-        BETTERTHREADS_TEST_CALL(test_set_num_threads_to_zero_dynamically());
+        UTILITY_TEST_CALL(test_construct_thread_name());
+        UTILITY_TEST_CALL(test_construct());
+        UTILITY_TEST_CALL(test_construct_empty());
+        UTILITY_TEST_CALL(test_construct_with_name());
+        UTILITY_TEST_CALL(test_execute_single());
+        UTILITY_TEST_CALL(test_exception());
+        UTILITY_TEST_CALL(test_destroy_before_completion());
+        UTILITY_TEST_CALL(test_execute_multiple_sequentially());
+        UTILITY_TEST_CALL(test_execute_multiple_concurrently());
+        UTILITY_TEST_CALL(test_execute_multiple_concurrently_sequentially());
+        UTILITY_TEST_CALL(test_process_on_atomic_type());
+        UTILITY_TEST_CALL(test_set_num_threads_up_statically());
+        UTILITY_TEST_CALL(test_set_num_threads_same_statically());
+        UTILITY_TEST_CALL(test_set_num_threads_down_statically());
+        UTILITY_TEST_CALL(test_set_num_threads_up_dynamically());
+        UTILITY_TEST_CALL(test_set_num_threads_down_dynamically());
+        UTILITY_TEST_CALL(test_set_num_threads_to_zero_dynamically());
     }
 };
 
@@ -232,5 +232,5 @@ int main() {
     ThreadRegistry registry;
     ConcLog::Logger::instance().attach_thread_registry(&registry);
     TestSmartThreadPool().test();
-    return BETTERTHREADS_TEST_FAILURES;
+    return UTILITY_TEST_FAILURES;
 }

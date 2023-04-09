@@ -27,12 +27,13 @@
  */
 
 #include "conclog/logging.hpp"
-#include "utility.hpp"
 #include "buffered_thread.hpp"
-
-using namespace ConcLog;
+#include "using.hpp"
 
 namespace BetterThreads {
+
+using ConcLog::Logger;
+using Utility::to_string;
 
 BufferedThread::BufferedThread(String name)
         : _name(name), _task_buffer(1), _got_id_future(_got_id_promise.get_future())
@@ -42,7 +43,7 @@ BufferedThread::BufferedThread(String name)
         _got_id_promise.set_value();
         while(true) {
             try {
-                VoidFunction task = _task_buffer.pull();
+                std::function<void(void)> task = _task_buffer.pull();
                 task();
             } catch(BufferInterruptPullingException&) { return; }
         }
@@ -52,7 +53,7 @@ BufferedThread::BufferedThread(String name)
     Logger::instance().register_thread(this->id(), this->name());
 }
 
-ThreadId BufferedThread::id() const {
+thread::id BufferedThread::id() const {
     return _id;
 }
 
@@ -60,15 +61,15 @@ String BufferedThread::name() const {
     return _name;
 }
 
-SizeType BufferedThread::queue_size() const {
+size_t BufferedThread::queue_size() const {
     return _task_buffer.size();
 }
 
-SizeType BufferedThread::queue_capacity() const {
+size_t BufferedThread::queue_capacity() const {
     return _task_buffer.capacity();
 }
 
-void BufferedThread::set_queue_capacity(SizeType capacity) {
+void BufferedThread::set_queue_capacity(size_t capacity) {
     return _task_buffer.set_capacity(capacity);
 }
 

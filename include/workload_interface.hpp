@@ -34,9 +34,12 @@
 #define BETTERTHREADS_WORKLOAD_INTERFACE_HPP
 
 #include <functional>
-#include "typedefs.hpp"
+#include "utility/container.hpp"
+#include "using.hpp"
 
 namespace BetterThreads {
+
+using Utility::List;
 
 //! \brief Interface for a workload expressed as a stack of elements to work on, supplied with a function to process them
 //! \details E: stack element type
@@ -52,7 +55,7 @@ public:
     virtual void process() = 0;
 
     //! \brief The size of the workload, i.e., the number of tasks to process
-    virtual SizeType size() const = 0;
+    virtual size_t size() const = 0;
 
     //! \brief Append one element to process
     virtual WorkloadInterface& append(E const &e) = 0;

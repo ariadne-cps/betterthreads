@@ -39,12 +39,18 @@
 #include <mutex>
 #include <atomic>
 #include <functional>
-#include "utility.hpp"
-#include "macros.hpp"
+#include "utility/macros.hpp"
+#include "utility/string.hpp"
 
 namespace BetterThreads {
 
-using ExceptionPtr = std::exception_ptr;
+using std::exception_ptr;
+using std::thread;
+using std::promise;
+using std::future;
+
+using VoidFunction = std::function<void(void)>;
+using Utility::String;
 
 //! \brief A class for handling a thread for a pool in a smarter way.
 //! \details It allows to wait for the start of the \a task before extracting the thread id, which is held along with
@@ -57,25 +63,25 @@ class Thread {
     Thread(VoidFunction task, String name = String());
 
     //! \brief Get the thread id
-    ThreadId id() const;
+    thread::id id() const;
     //! \brief Get the readable name
     String name() const;
 
     //! \brief The exception, if it exists
-    ExceptionPtr const& exception() const;
+    exception_ptr const& exception() const;
 
     //! \brief Destroy the instance
     ~Thread();
 
   private:
     String _name;
-    ThreadId _id;
+    thread::id _id;
     std::thread _thread;
-    Promise<void> _got_id_promise;
-    Future<void> _got_id_future;
-    Promise<void> _registered_thread_promise;
-    Future<void> _registered_thread_future;
-    ExceptionPtr _exception;
+    promise<void> _got_id_promise;
+    future<void> _got_id_future;
+    promise<void> _registered_thread_promise;
+    future<void> _registered_thread_future;
+    exception_ptr _exception;
 };
 
 } // namespace BetterThreads

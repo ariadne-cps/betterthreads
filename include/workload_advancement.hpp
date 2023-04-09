@@ -34,31 +34,32 @@
 #define BETTERTHREADS_WORKLOAD_ADVANCEMENT_HPP
 
 #include <algorithm>
-#include "typedefs.hpp"
 
 namespace BetterThreads {
+
+using std::mutex;
 
 //! \brief Synchronised class to manage the status of multiple elements to process
 class WorkloadAdvancement {
   public:
-    WorkloadAdvancement(SizeType initial = 0);
+    WorkloadAdvancement(size_t initial = 0);
 
     //! \brief The elements waiting to be processed
-    SizeType waiting() const;
+    size_t waiting() const;
     //! \brief The elements under processing
-    SizeType processing() const;
+    size_t processing() const;
     //! \brief The completed elements
-    SizeType completed() const;
+    size_t completed() const;
 
     //! \brief All the elements (sum of waiting, processing and completed)
-    SizeType total() const;
+    size_t total() const;
 
     //! \brief Add n elements to waiting
-    void add_to_waiting(SizeType n = 1);
+    void add_to_waiting(size_t n = 1);
     //! \brief Move n waiting to processing
-    void add_to_processing(SizeType n = 1);
+    void add_to_processing(size_t n = 1);
     //! \brief Move n processing to completed
-    void add_to_completed(SizeType n = 1);
+    void add_to_completed(size_t n = 1);
 
     //! \brief The rate of completion r (0<=r<=1) related to the progress
     double completion_rate() const;
@@ -67,11 +68,11 @@ class WorkloadAdvancement {
     bool has_finished() const;
 
   private:
-    SizeType _num_waiting;
-    SizeType _num_processing;
-    SizeType _num_completed;
+    size_t _num_waiting;
+    size_t _num_processing;
+    size_t _num_completed;
 
-    Mutex mutable _mux;
+    mutex mutable _mux;
 };
 
 } // namespace BetterThreads

@@ -26,61 +26,63 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "macros.hpp"
+#include "utility/macros.hpp"
 #include "workload_advancement.hpp"
 
 namespace BetterThreads {
 
-WorkloadAdvancement::WorkloadAdvancement(SizeType initial) : _num_waiting(initial), _num_processing(0), _num_completed(0) { }
+using std::lock_guard;
 
-SizeType WorkloadAdvancement::waiting() const {
-    LockGuard<Mutex> lock(_mux);
+WorkloadAdvancement::WorkloadAdvancement(size_t initial) : _num_waiting(initial), _num_processing(0), _num_completed(0) { }
+
+size_t WorkloadAdvancement::waiting() const {
+    lock_guard<mutex> lock(_mux);
     return _num_waiting;
 }
 
-SizeType WorkloadAdvancement::processing() const {
-    LockGuard<Mutex> lock(_mux);
+size_t WorkloadAdvancement::processing() const {
+    lock_guard<mutex> lock(_mux);
     return _num_processing;
 }
 
-SizeType WorkloadAdvancement::completed() const {
-    LockGuard<Mutex> lock(_mux);
+size_t WorkloadAdvancement::completed() const {
+    lock_guard<mutex> lock(_mux);
     return _num_completed;
 }
 
-SizeType WorkloadAdvancement::total() const {
-    LockGuard<Mutex> lock(_mux);
+size_t WorkloadAdvancement::total() const {
+    lock_guard<mutex> lock(_mux);
     return _num_waiting + _num_processing + _num_completed;
 }
 
-void WorkloadAdvancement::add_to_waiting(SizeType n) {
-    BETTERTHREADS_PRECONDITION(n > 0);
-    LockGuard<Mutex> lock(_mux);
+void WorkloadAdvancement::add_to_waiting(size_t n) {
+    UTILITY_PRECONDITION(n > 0);
+    lock_guard<mutex> lock(_mux);
     _num_waiting+=n;
 }
 
-void WorkloadAdvancement::add_to_processing(SizeType n) {
-    BETTERTHREADS_PRECONDITION(n <= _num_waiting);
-    LockGuard<Mutex> lock(_mux);
+void WorkloadAdvancement::add_to_processing(size_t n) {
+    UTILITY_PRECONDITION(n <= _num_waiting);
+    lock_guard<mutex> lock(_mux);
     _num_waiting-=n;
     _num_processing+=n;
 }
 
-void WorkloadAdvancement::add_to_completed(SizeType n) {
-    BETTERTHREADS_PRECONDITION(n <=_num_processing);
-    LockGuard<Mutex> lock(_mux);
+void WorkloadAdvancement::add_to_completed(size_t n) {
+    UTILITY_PRECONDITION(n <=_num_processing);
+    lock_guard<mutex> lock(_mux);
     _num_processing-=n;
     _num_completed+=n;
 }
 
 double WorkloadAdvancement::completion_rate() const {
-    LockGuard<Mutex> lock(_mux);
+    lock_guard<mutex> lock(_mux);
     auto total = static_cast<double>(_num_waiting + _num_processing + _num_completed);
     return static_cast<double>(_num_completed) / total;
 }
 
 bool WorkloadAdvancement::has_finished() const {
-    LockGuard<Mutex> lock(_mux);
+    lock_guard<mutex> lock(_mux);
     return _num_processing == 0 and _num_waiting == 0;
 }
 

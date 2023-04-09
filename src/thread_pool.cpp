@@ -30,7 +30,7 @@
 
 namespace BetterThreads {
 
-String construct_thread_name(String prefix, SizeType number, SizeType max_number) {
+String construct_thread_name(String prefix, size_t number, size_t max_number) {
     std::ostringstream ss;
     ss << prefix;
     if (max_number > 9 and number <= 9) ss << "0";
@@ -38,13 +38,13 @@ String construct_thread_name(String prefix, SizeType number, SizeType max_number
     return ss.str();
 }
 
-VoidFunction ThreadPool::_task_wrapper_function(SizeType i) {
+VoidFunction ThreadPool::_task_wrapper_function(size_t i) {
     return [i, this] {
         while (true) {
             VoidFunction task;
             bool got_task = false;
             {
-                UniqueLock<Mutex> lock(_task_availability_mutex);
+                unique_lock<mutex> lock(_task_availability_mutex);
                 _task_availability_condition.wait(lock, [=, this] {
                     return _finish_all_and_stop or (_num_active_threads > _num_threads_to_use) or not _tasks.empty();
                 });
@@ -57,7 +57,7 @@ VoidFunction ThreadPool::_task_wrapper_function(SizeType i) {
             }
             if (got_task) task();
             if (i>=_num_threads_to_use) {
-                LockGuard<Mutex> active_threads_lock(_num_active_threads_mutex);
+                lock_guard<mutex> active_threads_lock(_num_active_threads_mutex);
                 _num_active_threads--;
                 if (_num_active_threads == _num_threads_to_use) _all_unused_threads_stopped_promise.set_value();
                 return;
@@ -66,13 +66,13 @@ VoidFunction ThreadPool::_task_wrapper_function(SizeType i) {
     };
 }
 
-void ThreadPool::_append_thread_range(SizeType lower, SizeType upper) {
-    for (SizeType i=lower; i<upper; ++i) {
+void ThreadPool::_append_thread_range(size_t lower, size_t upper) {
+    for (size_t i=lower; i<upper; ++i) {
         _threads.push_back(make_shared<Thread>(ThreadPool::_task_wrapper_function(i), construct_thread_name(_name,i,upper)));
     }
 }
 
-ThreadPool::ThreadPool(SizeType size, String name)
+ThreadPool::ThreadPool(size_t size, String name)
         : _name(name), _finish_all_and_stop(false), _num_active_threads(size), _num_threads_to_use(size),
           _all_unused_threads_stopped_future(_all_unused_threads_stopped_promise.get_future())
 {
@@ -83,13 +83,13 @@ String ThreadPool::name() const {
     return _name;
 }
 
-SizeType ThreadPool::num_threads() const {
-    LockGuard<Mutex> lock(_num_threads_mutex);
+size_t ThreadPool::num_threads() const {
+    lock_guard<mutex> lock(_num_threads_mutex);
     return _threads.size();
 }
 
-void ThreadPool::set_num_threads(SizeType number) {
-    LockGuard<Mutex> lock(_num_threads_mutex);
+void ThreadPool::set_num_threads(size_t number) {
+    lock_guard<mutex> lock(_num_threads_mutex);
     auto old_size = _threads.size();
     _num_threads_to_use = number;
     if (number > old_size) {
@@ -99,19 +99,19 @@ void ThreadPool::set_num_threads(SizeType number) {
         _task_availability_condition.notify_all();
         _all_unused_threads_stopped_future.get();
         _threads.resize(number);
-        _all_unused_threads_stopped_promise = Promise<void>();
+        _all_unused_threads_stopped_promise = promise<void>();
         _all_unused_threads_stopped_future = _all_unused_threads_stopped_promise.get_future();
     }
 }
 
-SizeType ThreadPool::queue_size() const {
-    LockGuard<Mutex> lock(_task_availability_mutex);
+size_t ThreadPool::queue_size() const {
+    lock_guard<mutex> lock(_task_availability_mutex);
     return _tasks.size();
 }
 
 ThreadPool::~ThreadPool() {
     {
-        LockGuard<Mutex> task_availability_lock(_task_availability_mutex);
+        lock_guard<mutex> task_availability_lock(_task_availability_mutex);
         _finish_all_and_stop = true;
     }
     _task_availability_condition.notify_all();

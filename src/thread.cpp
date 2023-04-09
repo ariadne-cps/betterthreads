@@ -29,9 +29,10 @@
 #include "conclog/logging.hpp"
 #include "thread.hpp"
 
-using namespace ConcLog;
-
 namespace BetterThreads {
+
+using ConcLog::Logger;
+using Utility::to_string;
 
 Thread::Thread(VoidFunction task, String name)
         : _name(name), _got_id_future(_got_id_promise.get_future()), _registered_thread_future(_registered_thread_promise.get_future()),
@@ -50,7 +51,7 @@ Thread::Thread(VoidFunction task, String name)
     _registered_thread_promise.set_value();
 }
 
-ThreadId Thread::id() const {
+thread::id Thread::id() const {
     return _id;
 }
 
@@ -58,7 +59,7 @@ String Thread::name() const {
     return _name;
 }
 
-ExceptionPtr const& Thread::exception() const {
+exception_ptr const& Thread::exception() const {
     return _exception;
 }
 

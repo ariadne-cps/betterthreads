@@ -26,12 +26,15 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "thread.hpp"
+#include "utility/test.hpp"
+#include "utility/container.hpp"
 #include "conclog/logging.hpp"
 #include "conclog/thread_registry_interface.hpp"
-#include "test.hpp"
+#include "thread.hpp"
+#include "using.hpp"
 
 using namespace BetterThreads;
+using namespace Utility;
 
 using namespace std::chrono_literals;
 
@@ -49,10 +52,10 @@ class TestThread {
 
     void test_create() const {
         Thread thread1([]{}, "thr");
-        BETTERTHREADS_TEST_EXECUTE(thread1.id())
-        BETTERTHREADS_TEST_EQUALS(thread1.name(),"thr")
+        UTILITY_TEST_EXECUTE(thread1.id())
+        UTILITY_TEST_EQUALS(thread1.name(),"thr")
         Thread thread2([]{});
-        BETTERTHREADS_TEST_EQUALS(to_string(thread2.id()),thread2.name())
+        UTILITY_TEST_EQUALS(to_string(thread2.id()),thread2.name())
     }
 
     void test_destroy_before_completion() const {
@@ -63,37 +66,37 @@ class TestThread {
         int a = 0;
         Thread thread([&a] { a++; });
         std::this_thread::sleep_for(10ms);
-        BETTERTHREADS_TEST_EQUALS(a,1)
-        BETTERTHREADS_TEST_ASSERT(thread.exception() == nullptr)
+        UTILITY_TEST_EQUALS(a,1)
+        UTILITY_TEST_ASSERT(thread.exception() == nullptr)
     }
 
     void test_exception() const {
         Thread thread([] { throw new std::exception(); });
         std::this_thread::sleep_for(10ms);
-        BETTERTHREADS_TEST_ASSERT(thread.exception() != nullptr)
+        UTILITY_TEST_ASSERT(thread.exception() != nullptr)
     }
 
     void test_atomic_multiple_threads() const {
-        SizeType n_threads = 10*std::thread::hardware_concurrency();
-        BETTERTHREADS_TEST_PRINT(n_threads)
-        List<SharedPointer<Thread>> threads;
+        size_t n_threads = 10*std::thread::hardware_concurrency();
+        UTILITY_TEST_PRINT(n_threads)
+        List<shared_ptr<Thread>> threads;
 
-        std::atomic<SizeType> a = 0;
-        for (SizeType i=0; i<n_threads; ++i) {
+        std::atomic<size_t> a = 0;
+        for (size_t i=0; i<n_threads; ++i) {
             threads.push_back(std::make_shared<Thread>([&a] { a++; }));
         }
 
         std::this_thread::sleep_for(100ms);
-        BETTERTHREADS_TEST_EQUALS(a,n_threads)
+        UTILITY_TEST_EQUALS(a,n_threads)
         threads.clear();
     }
 
     void test() {
-        BETTERTHREADS_TEST_CALL(test_create())
-        BETTERTHREADS_TEST_CALL(test_destroy_before_completion())
-        BETTERTHREADS_TEST_CALL(test_task())
-        BETTERTHREADS_TEST_CALL(test_exception())
-        BETTERTHREADS_TEST_CALL(test_atomic_multiple_threads())
+        UTILITY_TEST_CALL(test_create())
+        UTILITY_TEST_CALL(test_destroy_before_completion())
+        UTILITY_TEST_CALL(test_task())
+        UTILITY_TEST_CALL(test_exception())
+        UTILITY_TEST_CALL(test_atomic_multiple_threads())
     }
 
 };
@@ -102,5 +105,5 @@ int main() {
     ThreadRegistry registry;
     ConcLog::Logger::instance().attach_thread_registry(&registry);
     TestThread().test();
-    return BETTERTHREADS_TEST_FAILURES;
+    return UTILITY_TEST_FAILURES;
 }

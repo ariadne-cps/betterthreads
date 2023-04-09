@@ -35,13 +35,26 @@
 
 #include <functional>
 #include <iomanip>
-#include "typedefs.hpp"
+#include "utility/container.hpp"
+#include "utility/tuple.hpp"
 #include "conclog/progress_indicator.hpp"
 #include "workload_interface.hpp"
 #include "thread_manager.hpp"
 #include "workload_advancement.hpp"
 
 namespace BetterThreads {
+
+using ConcLog::ProgressIndicator;
+using ConcLog::LogScopeManager;
+using ConcLog::Logger;
+
+using Utility::List;
+using Utility::make_lpair;
+
+using std::mutex;
+using std::unique_lock;
+using std::lock_guard;
+using std::condition_variable;
 
 //! \brief Base class implementation
 template<class E, class... AS>
@@ -50,14 +63,14 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
     WorkloadBase() : _progress_acknowledge_func(std::bind_front(&WorkloadBase::_default_progress_acknowledge, this)), _advancement(0), _logger_level(0), _progress_indicator(new ProgressIndicator(0)) { }
   public:
     using TaskFunctionType = std::function<void(E const &)>;
-    using ProgressAcknowledgeFunctionType = std::function<void(E const &, SharedPointer<ProgressIndicator>)>;
-    using CompletelyBoundFunctionType = VoidFunction;
+    using ProgressAcknowledgeFunctionType = std::function<void(E const &, shared_ptr<ProgressIndicator>)>;
+    using CompletelyBoundFunctionType = std::function<void(void)>;
 
     void process() override {
-        _log_scope_manager.reset(new LogScopeManager(BETTERTHREADS_PRETTY_FUNCTION,0));
+        _log_scope_manager.reset(new LogScopeManager(UTILITY_PRETTY_FUNCTION,0));
         _logger_level = Logger::instance().current_level();
         while (true) {
-            UniqueLock<Mutex> lock(_element_availability_mutex);
+            unique_lock<mutex> lock(_element_availability_mutex);
             _element_availability_condition.wait(lock, [=,this] { return _advancement.has_finished() or not _sequential_queue.empty() or _exception != nullptr; });
             if (_exception != nullptr) rethrow_exception(_exception);
             if (_advancement.has_finished()) { _log_scope_manager.reset(); return; }
@@ -76,7 +89,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
         }
     }
 
-    SizeType size() const override { return _sequential_queue.size(); }
+    size_t size() const override { return _sequential_queue.size(); }
 
     WorkloadInterface<E,AS...>& append(E const& e) override {
         _advancement.add_to_waiting();
@@ -103,20 +116,20 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
             task();
         } catch (...) {
             {
-                LockGuard<Mutex> lock(_element_availability_mutex);
+                lock_guard<mutex> lock(_element_availability_mutex);
                 _exception = std::current_exception();
             }
             _element_availability_condition.notify_one();
         }
 
         {
-            LockGuard<Mutex> lock(_element_availability_mutex);
+            lock_guard<mutex> lock(_element_availability_mutex);
             _advancement.add_to_completed();
         }
         if (_advancement.has_finished()) { _element_availability_condition.notify_one(); }
     }
 
-    void _default_progress_acknowledge(E const& e, SharedPointer<ProgressIndicator> indicator) {
+    void _default_progress_acknowledge(E const& e, shared_ptr<ProgressIndicator> indicator) {
         indicator->update_current(static_cast<double>(_advancement.completed()));
         indicator->update_final(static_cast<double>(_advancement.total()));
     }
@@ -143,7 +156,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
         } else {
             // Locking and notification are used when concurrency is set to zero during processing, in order to avoid a race and to resume processing _sequential_queue respectively
             {
-                LockGuard<Mutex> lock(_element_appending_mutex);
+                lock_guard<mutex> lock(_element_appending_mutex);
                 append(e);
             }
             _element_availability_condition.notify_one();
@@ -162,14 +175,14 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
     std::queue<std::pair<CompletelyBoundFunctionType,CompletelyBoundFunctionType>> _sequential_queue;
 
     unsigned int _logger_level; // The logger level to impose to the running threads
-    SharedPointer<LogScopeManager> _log_scope_manager; // The scope manager required to properly hold print
-    SharedPointer<ProgressIndicator> _progress_indicator; // The progress indicator to hold print
+    shared_ptr<LogScopeManager> _log_scope_manager; // The scope manager required to properly hold print
+    shared_ptr<ProgressIndicator> _progress_indicator; // The progress indicator to hold print
 
-    Mutex _element_appending_mutex;
-    Mutex _element_availability_mutex;
-    ConditionVariable _element_availability_condition;
+    mutex _element_appending_mutex;
+    mutex _element_availability_mutex;
+    condition_variable _element_availability_condition;
 
-    ExceptionPtr _exception;
+    exception_ptr _exception;
 };
 
 //! \brief A basic static workload where all elements are appended and then processed
@@ -181,9 +194,6 @@ public:
     StaticWorkload(TaskFunctionType f, AS... as) : WorkloadBase<E, AS...>() {
         this->_task_func = std::bind(std::forward<TaskFunctionType const>(f), std::placeholders::_1, std::forward<AS>(as)...);
     }
-
-    //StaticWorkload& append(E const& e) { WorkloadBase<E,AS...>::append(e); return *this; }
-    //StaticWorkload& append(List<E> const& es) { WorkloadBase<E,AS...>::append(es); return *this; }
 };
 
 //! \brief A dynamic workload in which it is possible to append new elements from the called function
@@ -202,7 +212,7 @@ class DynamicWorkload : public WorkloadBase<E,AS...> {
     };
   public:
     using TaskFunctionType = std::function<void(Access&, E const&, AS...)>;
-    using ProgressAcknowledgeFunctionType = std::function<void(E const&, SharedPointer<ProgressIndicator>)>;
+    using ProgressAcknowledgeFunctionType = std::function<void(E const&, shared_ptr<ProgressIndicator>)>;
 
     DynamicWorkload(ProgressAcknowledgeFunctionType p, TaskFunctionType t, AS... as) : WorkloadBase<E, AS...>(), _access(Access(*this)) {
         this->_task_func = std::bind(std::forward<TaskFunctionType const>(t),

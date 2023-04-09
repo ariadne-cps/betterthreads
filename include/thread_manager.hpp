@@ -37,8 +37,12 @@
 #include "conclog/logging.hpp"
 #include "conclog/thread_registry_interface.hpp"
 #include "thread_pool.hpp"
+#include "templates.hpp"
 
 namespace BetterThreads {
+
+using ConcLog::ThreadRegistryInterface;
+using ConcLog::Logger;
 
 //! \brief Manages tasks based on concurrency availability.
 class TaskManager : public ThreadRegistryInterface {
@@ -63,14 +67,14 @@ class TaskManager : public ThreadRegistryInterface {
     bool has_threads_registered() const override;
 
     //! \brief Get the maximum concurrency allowed by this machine
-    SizeType maximum_concurrency() const;
+    size_t maximum_concurrency() const;
     //! \brief Get the preferred concurrency to be used
     //! \details A concurrency of zero is allowed, meaning that a task
     //! will be run sequentially
-    SizeType concurrency() const;
+    size_t concurrency() const;
 
     //! \brief Synchronised method for updating the preferred concurrency to be used
-    void set_concurrency(SizeType value);
+    void set_concurrency(size_t value);
 
     //! \brief Set the concurrency to the maximum allowed by this machine
     void set_maximum_concurrency();
@@ -88,21 +92,21 @@ class TaskManager : public ThreadRegistryInterface {
     //! \brief Enqueue a task for execution, returning the future handler
     //! \details The is no limits on the number of tasks to enqueue. If concurrency is zero,
     //! then the task is executed sequentially with no threads involved
-    template<class F, class... AS> auto enqueue(F &&f, AS &&... args) -> Future<ResultOf<F(AS...)>>;
+    template<class F, class... AS> auto enqueue(F &&f, AS &&... args) -> future<ResultOf<F(AS...)>>;
 
   private:
-    const SizeType _maximum_concurrency;
-    SizeType _concurrency;
-    mutable Mutex _concurrency_mutex;
+    const size_t _maximum_concurrency;
+    size_t _concurrency;
+    mutable mutex _concurrency_mutex;
 
     ThreadPool _pool;
 };
 
-template<class F, class... AS> auto TaskManager::enqueue(F &&f, AS &&... args) -> Future<ResultOf<F(AS...)>> {
+template<class F, class... AS> auto TaskManager::enqueue(F &&f, AS &&... args) -> future<ResultOf<F(AS...)>> {
     if (_concurrency == 0) {
         using ReturnType = ResultOf<F(AS...)>;
-        auto task = PackagedTask<ReturnType()>(std::bind(std::forward<F>(f), std::forward<AS>(args)...));
-        Future<ReturnType> result = task.get_future();
+        auto task = packaged_task<ReturnType()>(std::bind(std::forward<F>(f), std::forward<AS>(args)...));
+        future<ReturnType> result = task.get_future();
         task();
         return result;
     } else return _pool.enqueue(f,args...);

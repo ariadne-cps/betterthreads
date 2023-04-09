@@ -1,7 +1,7 @@
 /***************************************************************************
- *            typedefs.hpp
+ *            templates.hpp
  *
- *  Copyright  2022  Luca Geretti
+ *  Copyright  2023  Luca Geretti
  *
  ****************************************************************************/
 
@@ -26,20 +26,14 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/*! \file typedefs.hpp
- *  \brief General typedefs.
+/*! \file templates.hpp
+ *  \brief Templates used.
  */
 
-#ifndef BETTERTHREADS_TYPEDEFS_HPP
-#define BETTERTHREADS_TYPEDEFS_HPP
+#ifndef BETTERTHREADS_TEMPLATES_HPP
+#define BETTERTHREADS_TEMPLATES_HPP
 
-#include <utility>
-#include <vector>
-#include <mutex>
-#include <thread>
-#include <future>
-#include <memory>
-#include "conclog/logging.hpp"
+#include <type_traits>
 
 namespace BetterThreads {
 
@@ -47,22 +41,6 @@ template<class SIG> struct ResultOfTrait;
 template<class F, class... AS> struct ResultOfTrait<F(AS...)> { typedef typename std::invoke_result<F,AS...>::type Type; };
 template<class SIG> using ResultOf = typename ResultOfTrait<SIG>::Type;
 
-using ConcLog::SizeType;
-using String = std::string;
-template<class T> using SharedPointer = std::shared_ptr<T>;
-template<class T> using List = std::vector<T>;
-
-using ConditionVariable = std::condition_variable;
-using Mutex = std::mutex;
-template<class T> using LockGuard = std::lock_guard<T>;
-template<class T> using UniqueLock = std::unique_lock<T>;
-using ThreadId = std::thread::id;
-using VoidFunction = std::function<void()>;
-template<class T> using Future = std::future<T>;
-template<class T> using Promise = std::promise<T>;
-template<class T> using PackagedTask = std::packaged_task<T>;
-
-
 } // namespace BetterThreads
 
-#endif // BETTERTHREADS_TYPEDEFS_HPP
+#endif // BETTERTHREADS_TEMPLATES_HPP

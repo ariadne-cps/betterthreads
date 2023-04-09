@@ -1,7 +1,7 @@
 /***************************************************************************
- *            utility.hpp
+ *            using.hpp
  *
- *  Copyright  2022  Luca Geretti
+ *  Copyright  2023  Luca Geretti
  *
  ****************************************************************************/
 
@@ -26,33 +26,31 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/*! \file utility.hpp
- *  \brief General utilities.
+/*! \file using.hpp
+ *  \brief Header for common using directives.
  */
 
-#ifndef BETTERTHREADS_UTILITY_HPP
-#define BETTERTHREADS_UTILITY_HPP
+#ifndef BETTERTHREADS_USING_HPP
+#define BETTERTHREADS_USING_HPP
 
-#include <sstream>
-#include <ostream>
 #include <utility>
+#include <mutex>
+#include <condition_variable>
+#include <future>
+#include <thread>
 
 namespace BetterThreads {
 
-template<class T> inline std::string to_string(const T& t) { std::stringstream ss; ss << t; return ss.str(); }
-
-template<class T1, class T2> constexpr std::pair<T1&,T2&> make_lpair(T1& t1, T2& t2) { return std::pair<T1&,T2&>(t1,t2); }
-
-template<class T> std::ostream& operator<<(std::ostream& os, const std::vector<T>& v) {
-    bool first=true;
-    for(auto x : v) {
-        os << (first ? "[" : ",") << x;
-        first = false;
-    }
-    if(first) { os << "["; }
-    return os << "]";
-}
+using std::future;
+using std::promise;
+using std::unique_lock;
+using std::lock_guard;
+using std::condition_variable;
+using std::packaged_task;
+using std::mutex;
+using std::shared_ptr;
+using std::thread;
 
 } // namespace BetterThreads
 
-#endif // BETTERTHREADS_UTILITY_HPP
+#endif // BETTERTHREADS_USING_HPP

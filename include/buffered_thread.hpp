@@ -39,10 +39,14 @@
 #include <mutex>
 #include <atomic>
 #include <functional>
-#include "typedefs.hpp"
+#include "utility/string.hpp"
+#include "templates.hpp"
 #include "buffer.hpp"
+#include "using.hpp"
 
 namespace BetterThreads {
+
+using Utility::String;
 
 //! \brief A class for handling a thread that accepts multiple tasks to be enqueued.
 //! \details It allows to wait for the start of the \a task before extracting the thread id, which is held along with
@@ -58,39 +62,39 @@ class BufferedThread {
     //! \brief Enqueue a task for execution, returning the future handler
     //! \details If the buffer is full, successive calls will block until an execution is started.
     template<class F, class... AS>
-    auto enqueue(F&& f, AS&&... args) -> Future<ResultOf<F(AS...)>>;
+    auto enqueue(F&& f, AS&&... args) -> future<ResultOf<F(AS...)>>;
 
     //! \brief Get the thread id
-    ThreadId id() const;
+    thread::id id() const;
     //! \brief Get the readable name
     String name() const;
 
     //! \brief The current size of the queue
-    SizeType queue_size() const;
+    size_t queue_size() const;
     //! \brief The capacity of the tasks to execute
-    SizeType queue_capacity() const;
+    size_t queue_capacity() const;
     //! \brief Change the queue capacity
     //! \details Capacity cannot be changed to a value lower than the current size
-    void set_queue_capacity(SizeType capacity);
+    void set_queue_capacity(size_t capacity);
 
     //! \brief Destroy the instance
     ~BufferedThread();
 
   private:
     String _name;
-    ThreadId _id;
+    thread::id _id;
     std::thread _thread;
-    Buffer<VoidFunction> _task_buffer;
-    Promise<void> _got_id_promise;
-    Future<void> _got_id_future;
+    Buffer<std::function<void(void)>> _task_buffer;
+    promise<void> _got_id_promise;
+    future<void> _got_id_future;
 };
 
-template<class F, class... AS> auto BufferedThread::enqueue(F&& f, AS&&... args) -> Future<ResultOf<F(AS...)>>
+template<class F, class... AS> auto BufferedThread::enqueue(F&& f, AS&&... args) -> future<ResultOf<F(AS...)>>
 {
     using ReturnType = ResultOf<F(AS...)>;
 
-    auto task = std::make_shared<PackagedTask<ReturnType()>>(std::bind(std::forward<F>(f), std::forward<AS>(args)...));
-    Future<ReturnType> result = task->get_future();
+    auto task = std::make_shared<packaged_task<ReturnType()>>(std::bind(std::forward<F>(f), std::forward<AS>(args)...));
+    future<ReturnType> result = task->get_future();
     _task_buffer.push([task](){ (*task)(); });
     return result;
 }

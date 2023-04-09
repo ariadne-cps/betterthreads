@@ -35,11 +35,15 @@
 
 #include <queue>
 #include "conclog/logging.hpp"
+#include "utility/container.hpp"
 #include "thread.hpp"
-
-using namespace ConcLog;
+#include "templates.hpp"
+#include "using.hpp"
 
 namespace BetterThreads {
+
+using std::make_shared;
+using Utility::List;
 
 const String THREAD_POOL_DEFAULT_NAME = "thr";
 
@@ -52,26 +56,26 @@ class StoppedThreadPoolException : public std::exception { };
 class ThreadPool {
   public:
     //! \brief Construct from a given number of threads and possibly a name
-    ThreadPool(SizeType num_threads, String name = THREAD_POOL_DEFAULT_NAME);
+    ThreadPool(size_t num_threads, String name = THREAD_POOL_DEFAULT_NAME);
 
     //! \brief Enqueue a task for execution, returning the future handler
     //! \details The is no limits on the number of tasks to enqueue
-    template<class F, class... AS> auto enqueue(F &&f, AS &&... args) -> Future<ResultOf<F(AS...)>>;
+    template<class F, class... AS> auto enqueue(F &&f, AS &&... args) -> future<ResultOf<F(AS...)>>;
 
     //! \brief The name of the pool
     String name() const;
 
     //! \brief The size of the tasks queue
-    SizeType queue_size() const;
+    size_t queue_size() const;
 
     //! \brief The number of threads
-    SizeType num_threads() const;
+    size_t num_threads() const;
 
     //! \brief Set the number of threads
     //! \details If reducing the current number, this method will block until
     //! all the previous tasks are completed, previous threads are destroyed
     //! and new threads are spawned
-    void set_num_threads(SizeType number);
+    void set_num_threads(size_t number);
 
     ~ThreadPool();
 
@@ -79,34 +83,34 @@ class ThreadPool {
 
     //! \brief The function wrapper handling the extraction from the queue
     //! \details Takes \a i as the index of the thread in the list, for identification when stopping selectively
-    VoidFunction _task_wrapper_function(SizeType i);
+    VoidFunction _task_wrapper_function(size_t i);
     //! \brief Append threads in the given range
-    void _append_thread_range(SizeType lower, SizeType upper);
+    void _append_thread_range(size_t lower, size_t upper);
 
   private:
     const String _name;
-    List<SharedPointer<Thread>> _threads;
+    List<shared_ptr<Thread>> _threads;
     std::queue<VoidFunction> _tasks;
 
-    mutable Mutex _task_availability_mutex;
-    ConditionVariable _task_availability_condition;
+    mutable mutex _task_availability_mutex;
+    condition_variable _task_availability_condition;
     bool _finish_all_and_stop; // Wait till the queue is empty before stopping the thread, used for destruction
-    SizeType _num_active_threads; // Down-counter for checking whether all the threads to stop have been stopped
-    SizeType _num_threads_to_use; // Reference on the number of threads to use: if lower than the threads size, the last threads will stop
-    mutable Mutex _num_active_threads_mutex;
-    mutable Mutex _num_threads_mutex;
-    Promise<void> _all_unused_threads_stopped_promise;
-    Future<void> _all_unused_threads_stopped_future;
+    size_t _num_active_threads; // Down-counter for checking whether all the threads to stop have been stopped
+    size_t _num_threads_to_use; // Reference on the number of threads to use: if lower than the threads size, the last threads will stop
+    mutable mutex _num_active_threads_mutex;
+    mutable mutex _num_threads_mutex;
+    promise<void> _all_unused_threads_stopped_promise;
+    future<void> _all_unused_threads_stopped_future;
 };
 
 template<class F, class... AS>
-auto ThreadPool::enqueue(F &&f, AS &&... args) -> Future<ResultOf<F(AS...)>> {
+auto ThreadPool::enqueue(F &&f, AS &&... args) -> future<ResultOf<F(AS...)>> {
     using ReturnType = ResultOf<F(AS...)>;
 
-    auto task = std::make_shared<PackagedTask<ReturnType()> >(std::bind(std::forward<F>(f), std::forward<AS>(args)...));
-    Future<ReturnType> result = task->get_future();
+    auto task = make_shared<packaged_task<ReturnType()> >(std::bind(std::forward<F>(f), std::forward<AS>(args)...));
+    future<ReturnType> result = task->get_future();
     {
-        UniqueLock<Mutex> lock(_task_availability_mutex);
+        unique_lock<mutex> lock(_task_availability_mutex);
         if (_finish_all_and_stop) throw StoppedThreadPoolException();
         _tasks.emplace([task]{ (*task)(); });
     }
@@ -116,7 +120,7 @@ auto ThreadPool::enqueue(F &&f, AS &&... args) -> Future<ResultOf<F(AS...)>> {
 
 //! \brief Utility function to construct a thread name from a \a prefix and a \a number,
 //! accounting for a maximum number of threads given by \a max_number
-String construct_thread_name(String prefix, SizeType number, SizeType max_number);
+String construct_thread_name(String prefix, size_t number, size_t max_number);
 
 }
 

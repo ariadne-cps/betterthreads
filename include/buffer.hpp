@@ -37,8 +37,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <queue>
-#include "typedefs.hpp"
-#include "macros.hpp"
+#include "utility/macros.hpp"
+#include "using.hpp"
 
 namespace BetterThreads {
 
@@ -49,12 +49,12 @@ class BufferInterruptPullingException : public std::exception { };
 template<class E> class Buffer
 {
   public:
-    Buffer(SizeType capacity) : _capacity(capacity), _interrupt(false) { BETTERTHREADS_PRECONDITION(capacity > 0); }
+    Buffer(size_t capacity) : _capacity(capacity), _interrupt(false) { UTILITY_PRECONDITION(capacity > 0); }
 
     //! \brief Push an object into the buffer
     //! \details Will block if the capacity has been reached
     void push(E const& e) {
-        UniqueLock<Mutex> locker(mux);
+        unique_lock<mutex> locker(mux);
         cond.wait(locker, [this](){return _queue.size() < _capacity;});
         _queue.push(e);
         cond.notify_all();
@@ -63,7 +63,7 @@ template<class E> class Buffer
     //! \brief Pulls an object from the buffer
     //! \details Will block if the capacity is zero
     E pull() {
-        UniqueLock<Mutex> locker(mux);
+        unique_lock<mutex> locker(mux);
         cond.wait(locker, [this](){return not _queue.empty() || _interrupt;});
         if (_interrupt and _queue.empty()) { _interrupt = false; throw BufferInterruptPullingException(); }
         E back = _queue.front();
@@ -73,20 +73,20 @@ template<class E> class Buffer
     }
 
     //! \brief The current size of the queue
-    SizeType size() const {
-        LockGuard<Mutex> locker(mux);
+    size_t size() const {
+        lock_guard<mutex> locker(mux);
         return _queue.size();
     }
 
     //! \brief The maximum size for the queue
-    SizeType capacity() const {
+    size_t capacity() const {
         return _capacity;
     }
 
     //! \brief Change the capacity
-    void set_capacity(SizeType capacity) {
-        BETTERTHREADS_PRECONDITION(capacity>0);
-        BETTERTHREADS_ASSERT_MSG(capacity>=size(),"Reducing capacity below currenty buffer size is not allowed.");
+    void set_capacity(size_t capacity) {
+        UTILITY_PRECONDITION(capacity>0);
+        UTILITY_ASSERT_MSG(capacity>=size(),"Reducing capacity below currenty buffer size is not allowed.");
         _capacity = capacity;
     }
 
@@ -98,10 +98,10 @@ template<class E> class Buffer
     }
 
 private:
-    mutable Mutex mux;
-    ConditionVariable cond;
+    mutable mutex mux;
+    condition_variable cond;
     std::queue<E> _queue;
-    std::atomic<SizeType> _capacity;
+    std::atomic<size_t> _capacity;
     bool _interrupt;
 };
 

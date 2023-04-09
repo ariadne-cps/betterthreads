@@ -27,16 +27,18 @@
  */
 
 #include <functional>
+#include "utility/test.hpp"
+#include "utility/container.hpp"
 #include "workload.hpp"
-#include "test.hpp"
 
 using namespace BetterThreads;
+using namespace Utility;
 
 template<class T> class SynchronisedList : public List<T> {
   public:
-    void append(T const& v) { LockGuard<Mutex> guard(_mux); return List<T>::push_back(v); }
+    void append(T const& v) { lock_guard<mutex> guard(_mux); return List<T>::push_back(v); }
   private:
-    Mutex _mux;
+    mutex _mux;
 };
 
 using StaticWorkloadType = StaticWorkload<int,std::shared_ptr<std::atomic<int>>>;
@@ -87,7 +89,7 @@ class TestWorkload {
         TaskManager::instance().set_concurrency(0);
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &square_and_store, result);
-        BETTERTHREADS_TEST_EQUALS(wl.size(),0)
+        UTILITY_TEST_EQUALS(wl.size(),0)
     }
 
     void test_append() {
@@ -95,16 +97,16 @@ class TestWorkload {
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &square_and_store, result);
         wl.append(2);
-        BETTERTHREADS_TEST_EQUALS(wl.size(),1)
+        UTILITY_TEST_EQUALS(wl.size(),1)
         wl.append({10,20});
-        BETTERTHREADS_TEST_EQUALS(wl.size(),3)
+        UTILITY_TEST_EQUALS(wl.size(),3)
     }
 
     void test_process_nothing() {
         TaskManager::instance().set_maximum_concurrency();
         auto result = std::make_shared<std::atomic<int>>();
         StaticWorkloadType wl(&sum_all, result);
-        BETTERTHREADS_TEST_EXECUTE(wl.process())
+        UTILITY_TEST_EXECUTE(wl.process())
     }
 
     void test_serial_processing_static() {
@@ -114,8 +116,8 @@ class TestWorkload {
         DynamicWorkloadType wl(&progress_acknowledge, &square_and_store, result);
         wl.append(2);
         wl.process();
-        BETTERTHREADS_TEST_PRINT(*result)
-        BETTERTHREADS_TEST_EQUALS(result->size(),5)
+        UTILITY_TEST_PRINT(*result)
+        UTILITY_TEST_EQUALS(result->size(),5)
     }
 
     void test_serial_processing_dynamic() {
@@ -125,8 +127,8 @@ class TestWorkload {
         DynamicWorkloadType wl(&progress_acknowledge, &square_and_store, result);
         wl.append(2);
         wl.process();
-        BETTERTHREADS_TEST_PRINT(*result)
-        BETTERTHREADS_TEST_EQUALS(result->size(),5)
+        UTILITY_TEST_PRINT(*result)
+        UTILITY_TEST_EQUALS(result->size(),5)
     }
 
     void test_concurrent_processing_static() {
@@ -136,7 +138,7 @@ class TestWorkload {
         StaticWorkloadType wl(&sum_all, result);
         wl.append({2,7,-3,5,8,10,5,8});
         wl.process();
-        BETTERTHREADS_TEST_EQUALS(*result,42)
+        UTILITY_TEST_EQUALS(*result,42)
     }
 
     void test_concurrent_processing_dynamic() {
@@ -146,8 +148,8 @@ class TestWorkload {
         DynamicWorkloadType wl(&progress_acknowledge, &square_and_store, result);
         wl.append(2);
         wl.process();
-        BETTERTHREADS_TEST_PRINT(*result)
-        BETTERTHREADS_TEST_EQUALS(result->size(),5)
+        UTILITY_TEST_PRINT(*result)
+        UTILITY_TEST_EQUALS(result->size(),5)
     }
 
     void test_print_hold() {
@@ -165,7 +167,7 @@ class TestWorkload {
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &throw_exception_immediately, result);
         wl.append(2);
-        BETTERTHREADS_TEST_FAIL(wl.process())
+        UTILITY_TEST_FAIL(wl.process())
     }
 
     void test_throw_serial_exception_later() {
@@ -173,7 +175,7 @@ class TestWorkload {
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &throw_exception_later, result);
         wl.append(2);
-        BETTERTHREADS_TEST_FAIL(wl.process())
+        UTILITY_TEST_FAIL(wl.process())
     }
 
     void test_throw_concurrent_exception_immediately() {
@@ -181,7 +183,7 @@ class TestWorkload {
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &throw_exception_immediately, result);
         wl.append(2);
-        BETTERTHREADS_TEST_FAIL(wl.process())
+        UTILITY_TEST_FAIL(wl.process())
     }
 
     void test_throw_concurrent_exception_later() {
@@ -189,7 +191,7 @@ class TestWorkload {
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &throw_exception_later, result);
         wl.append(2);
-        BETTERTHREADS_TEST_FAIL(wl.process())
+        UTILITY_TEST_FAIL(wl.process())
     }
 
     void test_multiple_append() {
@@ -200,8 +202,8 @@ class TestWorkload {
         result->append(3);
         wl.append({2,3});
         wl.process();
-        BETTERTHREADS_TEST_PRINT(*result)
-        BETTERTHREADS_TEST_EQUALS(result->size(),10)
+        UTILITY_TEST_PRINT(*result)
+        UTILITY_TEST_EQUALS(result->size(),10)
     }
 
     void test_multiple_process() {
@@ -215,31 +217,31 @@ class TestWorkload {
         result->append(3);
         wl.append(3);
         wl.process();
-        BETTERTHREADS_TEST_PRINT(*result)
-        BETTERTHREADS_TEST_EQUALS(result->size(),5)
+        UTILITY_TEST_PRINT(*result)
+        UTILITY_TEST_EQUALS(result->size(),5)
     }
 
     void test() {
-        BETTERTHREADS_TEST_CALL(test_construct_static())
-        BETTERTHREADS_TEST_CALL(test_construct_dynamic())
-        BETTERTHREADS_TEST_CALL(test_append())
-        BETTERTHREADS_TEST_CALL(test_process_nothing())
-        BETTERTHREADS_TEST_CALL(test_serial_processing_static())
-        BETTERTHREADS_TEST_CALL(test_serial_processing_dynamic())
-        BETTERTHREADS_TEST_CALL(test_concurrent_processing_static())
-        BETTERTHREADS_TEST_CALL(test_concurrent_processing_dynamic())
-        BETTERTHREADS_TEST_CALL(test_print_hold())
-        BETTERTHREADS_TEST_CALL(test_throw_serial_exception_immediately())
-        BETTERTHREADS_TEST_CALL(test_throw_serial_exception_later())
-        BETTERTHREADS_TEST_CALL(test_throw_concurrent_exception_immediately())
-        BETTERTHREADS_TEST_CALL(test_throw_concurrent_exception_later())
-        BETTERTHREADS_TEST_CALL(test_multiple_append())
-        BETTERTHREADS_TEST_CALL(test_multiple_process())
+        UTILITY_TEST_CALL(test_construct_static())
+        UTILITY_TEST_CALL(test_construct_dynamic())
+        UTILITY_TEST_CALL(test_append())
+        UTILITY_TEST_CALL(test_process_nothing())
+        UTILITY_TEST_CALL(test_serial_processing_static())
+        UTILITY_TEST_CALL(test_serial_processing_dynamic())
+        UTILITY_TEST_CALL(test_concurrent_processing_static())
+        UTILITY_TEST_CALL(test_concurrent_processing_dynamic())
+        UTILITY_TEST_CALL(test_print_hold())
+        UTILITY_TEST_CALL(test_throw_serial_exception_immediately())
+        UTILITY_TEST_CALL(test_throw_serial_exception_later())
+        UTILITY_TEST_CALL(test_throw_concurrent_exception_immediately())
+        UTILITY_TEST_CALL(test_throw_concurrent_exception_later())
+        UTILITY_TEST_CALL(test_multiple_append())
+        UTILITY_TEST_CALL(test_multiple_process())
     }
 
 };
 
 int main() {
     TestWorkload().test();
-    return BETTERTHREADS_TEST_FAILURES;
+    return UTILITY_TEST_FAILURES;
 }
