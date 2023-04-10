@@ -35,21 +35,23 @@ using ConcLog::Logger;
 using Utility::to_string;
 
 Thread::Thread(VoidFunction task, String name, bool active)
-        : _name(std::move(name)), _got_id_future(_got_id_promise.get_future()), _active(active), _activate_future(_activate_promise.get_future()), _registered_thread_future(_registered_thread_promise.get_future()),
+        : _name(std::move(name)), _got_id_future(_got_id_promise.get_future()), _active(active), _ready_for_task_future(_ready_for_task_promise.get_future()),
           _exception(nullptr)
 {
     _thread = std::thread([=,this]() {
         _id = std::this_thread::get_id();
         _got_id_promise.set_value();
-        _registered_thread_future.get();
-        try { task(); }
-        catch(...) { _exception = std::current_exception(); }
+        _ready_for_task_future.get();
+        if (_active) {
+            try { task(); }
+            catch(...) { _exception = std::current_exception(); }
+        }
     });
     _got_id_future.get();
     if (_name.empty()) _name = to_string(_id);
     if (active) {
         Logger::instance().register_thread(_id,_name);
-        _registered_thread_promise.set_value();
+        _ready_for_task_promise.set_value();
     }
 }
 
@@ -68,7 +70,7 @@ void Thread::activate()  {
     if (not _active) {
         _active = true;
         Logger::instance().register_thread(_id,_name);
-        _activate_promise.set_value();
+        _ready_for_task_promise.set_value();
     }
 }
 
@@ -77,9 +79,10 @@ exception_ptr const& Thread::exception() const {
 }
 
 Thread::~Thread() {
-    if (not _active) _activate_promise.set_value();
+    if (not _active) _ready_for_task_promise.set_value();
+    else Logger::instance().unregister_thread(_id);
     _thread.join();
-    Logger::instance().unregister_thread(_id);
+
 }
 
 } // namespace BetterThreads

@@ -87,10 +87,8 @@ class Thread {
     promise<void> _got_id_promise;
     future<void> _got_id_future;
     std::atomic<bool> _active;
-    std::promise<void> _activate_promise;
-    std::future<void> _activate_future;
-    promise<void> _registered_thread_promise;
-    future<void> _registered_thread_future;
+    promise<void> _ready_for_task_promise;
+    future<void> _ready_for_task_future;
     exception_ptr _exception;
 };
 
