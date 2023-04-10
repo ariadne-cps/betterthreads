@@ -34,8 +34,8 @@ namespace BetterThreads {
 using ConcLog::Logger;
 using Utility::to_string;
 
-Thread::Thread(VoidFunction task, String name)
-        : _name(name), _got_id_future(_got_id_promise.get_future()), _registered_thread_future(_registered_thread_promise.get_future()),
+Thread::Thread(VoidFunction task, String name, bool active)
+        : _name(std::move(name)), _got_id_future(_got_id_promise.get_future()), _active(active), _activate_future(_activate_promise.get_future()), _registered_thread_future(_registered_thread_promise.get_future()),
           _exception(nullptr)
 {
     _thread = std::thread([=,this]() {
@@ -46,10 +46,15 @@ Thread::Thread(VoidFunction task, String name)
         catch(...) { _exception = std::current_exception(); }
     });
     _got_id_future.get();
-    if (_name == String()) _name = to_string(_id);
-    Logger::instance().register_thread(this->id(),this->name());
-    _registered_thread_promise.set_value();
+    if (_name.empty()) _name = to_string(_id);
+    if (active) {
+        Logger::instance().register_thread(_id,_name);
+        _registered_thread_promise.set_value();
+    }
 }
+
+Thread::Thread(VoidFunction task, String name) : Thread(task, name, true)
+{ }
 
 thread::id Thread::id() const {
     return _id;
@@ -59,13 +64,22 @@ String Thread::name() const {
     return _name;
 }
 
+void Thread::activate()  {
+    if (not _active) {
+        _active = true;
+        Logger::instance().register_thread(_id,_name);
+        _activate_promise.set_value();
+    }
+}
+
 exception_ptr const& Thread::exception() const {
     return _exception;
 }
 
 Thread::~Thread() {
+    if (not _active) _activate_promise.set_value();
     _thread.join();
-    Logger::instance().unregister_thread(this->id());
+    Logger::instance().unregister_thread(_id);
 }
 
 } // namespace BetterThreads

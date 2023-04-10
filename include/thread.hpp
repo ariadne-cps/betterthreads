@@ -58,14 +58,21 @@ using Utility::String;
 class Thread {
   public:
 
-    //! \brief Construct with an optional name.
-    //! \details The thread will start and store the id
-    Thread(VoidFunction task, String name = String());
+    //! \brief Construct with a \a name and \a active specification
+    //! \details The thread will start and store the id if active, otherwise activate() will be needed.
+    Thread(VoidFunction task, String name, bool active);
+
+    //! \brief Construct with default active=true and possibly default String name equal to the thread id
+    Thread(VoidFunction task, String name = std::string());
 
     //! \brief Get the thread id
     thread::id id() const;
     //! \brief Get the readable name
     String name() const;
+
+    //! \brief Activate the thread
+    //! \details If already active (whether at construction of by a previous call to activate()), will do nothing.
+    void activate();
 
     //! \brief The exception, if it exists
     exception_ptr const& exception() const;
@@ -79,6 +86,9 @@ class Thread {
     std::thread _thread;
     promise<void> _got_id_promise;
     future<void> _got_id_future;
+    std::atomic<bool> _active;
+    std::promise<void> _activate_promise;
+    std::future<void> _activate_future;
     promise<void> _registered_thread_promise;
     future<void> _registered_thread_future;
     exception_ptr _exception;

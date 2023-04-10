@@ -59,7 +59,7 @@ class TestThread {
     }
 
     void test_destroy_before_completion() const {
-        Thread thread([] { std::this_thread::sleep_for(100ms); });
+        Thread thread([] { std::this_thread::sleep_for(100ms); },"");
     }
 
     void test_task() const {
