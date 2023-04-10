@@ -80,20 +80,20 @@ class TestWorkload {
   public:
 
     void test_construct_static() {
-        TaskManager::instance().set_concurrency(0);
+        ThreadManager::instance().set_concurrency(0);
         auto result = std::make_shared<std::atomic<int>>();
         StaticWorkloadType wl(&sum_all, result);
     }
 
     void test_construct_dynamic() {
-        TaskManager::instance().set_concurrency(0);
+        ThreadManager::instance().set_concurrency(0);
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &square_and_store, result);
         UTILITY_TEST_EQUALS(wl.size(),0)
     }
 
     void test_append() {
-        TaskManager::instance().set_concurrency(0);
+        ThreadManager::instance().set_concurrency(0);
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &square_and_store, result);
         wl.append(2);
@@ -103,14 +103,14 @@ class TestWorkload {
     }
 
     void test_process_nothing() {
-        TaskManager::instance().set_maximum_concurrency();
+        ThreadManager::instance().set_maximum_concurrency();
         auto result = std::make_shared<std::atomic<int>>();
         StaticWorkloadType wl(&sum_all, result);
         UTILITY_TEST_EXECUTE(wl.process())
     }
 
     void test_serial_processing_static() {
-        TaskManager::instance().set_concurrency(0);
+        ThreadManager::instance().set_concurrency(0);
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         result->append(2);
         DynamicWorkloadType wl(&progress_acknowledge, &square_and_store, result);
@@ -121,7 +121,7 @@ class TestWorkload {
     }
 
     void test_serial_processing_dynamic() {
-        TaskManager::instance().set_concurrency(0);
+        ThreadManager::instance().set_concurrency(0);
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         result->append(2);
         DynamicWorkloadType wl(&progress_acknowledge, &square_and_store, result);
@@ -132,7 +132,7 @@ class TestWorkload {
     }
 
     void test_concurrent_processing_static() {
-        TaskManager::instance().set_maximum_concurrency();
+        ThreadManager::instance().set_maximum_concurrency();
         auto result = std::make_shared<std::atomic<int>>();
         *result = 0;
         StaticWorkloadType wl(&sum_all, result);
@@ -142,7 +142,7 @@ class TestWorkload {
     }
 
     void test_concurrent_processing_dynamic() {
-        TaskManager::instance().set_maximum_concurrency();
+        ThreadManager::instance().set_maximum_concurrency();
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         result->append(2);
         DynamicWorkloadType wl(&progress_acknowledge, &square_and_store, result);
@@ -153,7 +153,7 @@ class TestWorkload {
     }
 
     void test_print_hold() {
-        TaskManager::instance().set_concurrency(0);
+        ThreadManager::instance().set_concurrency(0);
         Logger::instance().configuration().set_verbosity(2);
         StaticWorkload<int> wl(&print);
         wl.append({1,2,3,4,5});
@@ -163,7 +163,7 @@ class TestWorkload {
     }
 
     void test_throw_serial_exception_immediately() {
-        TaskManager::instance().set_concurrency(0);
+        ThreadManager::instance().set_concurrency(0);
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &throw_exception_immediately, result);
         wl.append(2);
@@ -171,7 +171,7 @@ class TestWorkload {
     }
 
     void test_throw_serial_exception_later() {
-        TaskManager::instance().set_concurrency(0);
+        ThreadManager::instance().set_concurrency(0);
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &throw_exception_later, result);
         wl.append(2);
@@ -179,7 +179,7 @@ class TestWorkload {
     }
 
     void test_throw_concurrent_exception_immediately() {
-        TaskManager::instance().set_maximum_concurrency();
+        ThreadManager::instance().set_maximum_concurrency();
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &throw_exception_immediately, result);
         wl.append(2);
@@ -187,7 +187,7 @@ class TestWorkload {
     }
 
     void test_throw_concurrent_exception_later() {
-        TaskManager::instance().set_maximum_concurrency();
+        ThreadManager::instance().set_maximum_concurrency();
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &throw_exception_later, result);
         wl.append(2);
@@ -195,7 +195,7 @@ class TestWorkload {
     }
 
     void test_multiple_append() {
-        TaskManager::instance().set_maximum_concurrency();
+        ThreadManager::instance().set_maximum_concurrency();
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &square_and_store, result);
         result->append(2);
@@ -207,7 +207,7 @@ class TestWorkload {
     }
 
     void test_multiple_process() {
-        TaskManager::instance().set_maximum_concurrency();
+        ThreadManager::instance().set_maximum_concurrency();
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         result->append(2);
         DynamicWorkloadType wl(&progress_acknowledge, &square_and_store, result);

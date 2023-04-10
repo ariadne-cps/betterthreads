@@ -46,7 +46,7 @@ using Utility::List;
 //!          AS: optional input arguments for processing the elements; if used as output, their synchronisation
 //!              in the concurrent case is up to the designer
 //!          The workload handles the non-concurrent case separately, in order to unroll the tasks breadth-first: if
-//!          tasks were instead enqueued to the TaskManager, a depth-first execution would be performed.
+//!          tasks were instead enqueued to the ThreadManager, a depth-first execution would be performed.
 template<class E, class... AS>
 class WorkloadInterface {
 public:

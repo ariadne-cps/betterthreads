@@ -33,50 +33,50 @@
 using namespace BetterThreads;
 using namespace std::chrono_literals;
 
-class TestWorkloadAdvancement {
+class TestThreadManager {
   public:
 
     void test_set_concurrency() {
-        auto max_concurrency = TaskManager::instance().maximum_concurrency();
-        TaskManager::instance().set_concurrency(max_concurrency);
-        UTILITY_TEST_EQUALS(TaskManager::instance().concurrency(), max_concurrency)
-        TaskManager::instance().set_maximum_concurrency();
-        UTILITY_TEST_EQUALS(TaskManager::instance().concurrency(), max_concurrency)
-        UTILITY_TEST_FAIL(TaskManager::instance().set_concurrency(1 + max_concurrency))
+        auto max_concurrency = ThreadManager::instance().maximum_concurrency();
+        ThreadManager::instance().set_concurrency(max_concurrency);
+        UTILITY_TEST_EQUALS(ThreadManager::instance().concurrency(), max_concurrency)
+        ThreadManager::instance().set_maximum_concurrency();
+        UTILITY_TEST_EQUALS(ThreadManager::instance().concurrency(), max_concurrency)
+        UTILITY_TEST_FAIL(ThreadManager::instance().set_concurrency(1 + max_concurrency))
     }
 
     void test_run_task_with_one_thread() {
-        TaskManager::instance().set_concurrency(1);
+        ThreadManager::instance().set_concurrency(1);
         int a = 10;
-        auto result = TaskManager::instance().enqueue([&a]{ return a * a; }).get();
+        auto result = ThreadManager::instance().enqueue([&a]{ return a * a; }).get();
         UTILITY_TEST_EQUALS(result,100)
     }
 
     void test_run_task_with_multiple_threads() {
-        TaskManager::instance().set_concurrency(TaskManager::instance().maximum_concurrency());
+        ThreadManager::instance().set_concurrency(ThreadManager::instance().maximum_concurrency());
         int a = 10;
-        auto result = TaskManager::instance().enqueue([&a]{ return a * a; }).get();
+        auto result = ThreadManager::instance().enqueue([&a]{ return a * a; }).get();
         UTILITY_TEST_EQUALS(result,100)
     }
 
     void test_run_task_with_no_threads() {
-        TaskManager::instance().set_concurrency(0);
+        ThreadManager::instance().set_concurrency(0);
         int a = 10;
-        auto result = TaskManager::instance().enqueue([&a]{ return a * a; }).get();
+        auto result = ThreadManager::instance().enqueue([&a]{ return a * a; }).get();
         UTILITY_TEST_EQUALS(result,100)
     }
 
     void test_change_concurrency_and_log_scheduler() {
-        UTILITY_TEST_EXECUTE(TaskManager::instance().set_concurrency(1))
-        UTILITY_TEST_FAIL(TaskManager::instance().set_logging_immediate_scheduler())
-        UTILITY_TEST_FAIL(TaskManager::instance().set_logging_blocking_scheduler())
-        UTILITY_TEST_FAIL(TaskManager::instance().set_logging_nonblocking_scheduler())
-        UTILITY_TEST_EXECUTE(TaskManager::instance().set_concurrency(0))
-        UTILITY_TEST_EXECUTE(TaskManager::instance().set_logging_immediate_scheduler())
-        UTILITY_TEST_EXECUTE(TaskManager::instance().set_logging_blocking_scheduler())
-        UTILITY_TEST_EXECUTE(TaskManager::instance().set_logging_nonblocking_scheduler())
-        UTILITY_TEST_EXECUTE(TaskManager::instance().set_concurrency(1))
-        UTILITY_TEST_EXECUTE(TaskManager::instance().set_concurrency(0))
+        UTILITY_TEST_EXECUTE(ThreadManager::instance().set_concurrency(1))
+        UTILITY_TEST_FAIL(ThreadManager::instance().set_logging_immediate_scheduler())
+        UTILITY_TEST_FAIL(ThreadManager::instance().set_logging_blocking_scheduler())
+        UTILITY_TEST_FAIL(ThreadManager::instance().set_logging_nonblocking_scheduler())
+        UTILITY_TEST_EXECUTE(ThreadManager::instance().set_concurrency(0))
+        UTILITY_TEST_EXECUTE(ThreadManager::instance().set_logging_immediate_scheduler())
+        UTILITY_TEST_EXECUTE(ThreadManager::instance().set_logging_blocking_scheduler())
+        UTILITY_TEST_EXECUTE(ThreadManager::instance().set_logging_nonblocking_scheduler())
+        UTILITY_TEST_EXECUTE(ThreadManager::instance().set_concurrency(1))
+        UTILITY_TEST_EXECUTE(ThreadManager::instance().set_concurrency(0))
     }
 
     void test() {
@@ -89,6 +89,6 @@ class TestWorkloadAdvancement {
 };
 
 int main() {
-    TestWorkloadAdvancement().test();
+    TestThreadManager().test();
     return UTILITY_TEST_FAILURES;
 }

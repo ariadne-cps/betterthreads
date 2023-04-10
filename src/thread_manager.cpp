@@ -34,43 +34,43 @@ namespace BetterThreads {
 
 using ConcLog::Logger;
 
-TaskManager::TaskManager() : _maximum_concurrency(std::thread::hardware_concurrency()), _concurrency(0), _pool(0) {}
+ThreadManager::ThreadManager() : _maximum_concurrency(std::thread::hardware_concurrency()), _concurrency(0), _pool(0) {}
 
-bool TaskManager::has_threads_registered() const {
+bool ThreadManager::has_threads_registered() const {
     return _concurrency;
 }
 
-size_t TaskManager::maximum_concurrency() const {
+size_t ThreadManager::maximum_concurrency() const {
     return _maximum_concurrency;
 }
 
-size_t TaskManager::concurrency() const {
+size_t ThreadManager::concurrency() const {
     lock_guard<mutex> lock(_concurrency_mutex);
     return _concurrency;
 }
 
-void TaskManager::set_concurrency(size_t value) {
+void ThreadManager::set_concurrency(size_t value) {
     UTILITY_PRECONDITION(value <= _maximum_concurrency);
     lock_guard<mutex> lock(_concurrency_mutex);
     _concurrency = value;
     _pool.set_num_threads(value);
 }
 
-void TaskManager::set_maximum_concurrency() {
+void ThreadManager::set_maximum_concurrency() {
     set_concurrency(_maximum_concurrency);
 }
 
-void TaskManager::set_logging_immediate_scheduler() const {
+void ThreadManager::set_logging_immediate_scheduler() const {
     UTILITY_PRECONDITION(_concurrency == 0)
     Logger::instance().use_immediate_scheduler();
 }
 
-void TaskManager::set_logging_blocking_scheduler() const {
+void ThreadManager::set_logging_blocking_scheduler() const {
     UTILITY_PRECONDITION(_concurrency == 0)
     Logger::instance().use_blocking_scheduler();
 }
 
-void TaskManager::set_logging_nonblocking_scheduler() const {
+void ThreadManager::set_logging_nonblocking_scheduler() const {
     UTILITY_PRECONDITION(_concurrency == 0)
     Logger::instance().use_nonblocking_scheduler();
 }

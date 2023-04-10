@@ -44,20 +44,20 @@ namespace BetterThreads {
 using ConcLog::ThreadRegistryInterface;
 using ConcLog::Logger;
 
-//! \brief Manages tasks based on concurrency availability.
-class TaskManager : public ThreadRegistryInterface {
+//! \brief Manages threads based on concurrency availability.
+class ThreadManager : public ThreadRegistryInterface {
   private:
-    TaskManager();
+    ThreadManager();
   public:
-    TaskManager(TaskManager const&) = delete;
-    void operator=(TaskManager const&) = delete;
+    ThreadManager(ThreadManager const&) = delete;
+    void operator=(ThreadManager const&) = delete;
 
-    virtual ~TaskManager() = default;
+    virtual ~ThreadManager() = default;
 
     //! \brief The singleton instance of this class
-    static TaskManager& instance() {
+    static ThreadManager& instance() {
         auto& logger = Logger::instance();
-        static TaskManager instance;
+        static ThreadManager instance;
         if (not logger.has_thread_registry_attached())
             logger.attach_thread_registry(&instance);
         return instance;
@@ -102,7 +102,7 @@ class TaskManager : public ThreadRegistryInterface {
     ThreadPool _pool;
 };
 
-template<class F, class... AS> auto TaskManager::enqueue(F &&f, AS &&... args) -> future<ResultOf<F(AS...)>> {
+template<class F, class... AS> auto ThreadManager::enqueue(F &&f, AS &&... args) -> future<ResultOf<F(AS...)>> {
     if (_concurrency == 0) {
         using ReturnType = ResultOf<F(AS...)>;
         auto task = packaged_task<ReturnType()>(std::bind(std::forward<F>(f), std::forward<AS>(args)...));

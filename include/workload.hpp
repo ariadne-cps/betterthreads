@@ -79,7 +79,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
             make_lpair(task,progress_acknowledge) = _sequential_queue.front();
             _sequential_queue.pop();
             if (_using_concurrency()) {
-                TaskManager::instance().enqueue([this, task, progress_acknowledge] { _concurrent_task_wrapper(task,progress_acknowledge); });
+                ThreadManager::instance().enqueue([this, task, progress_acknowledge] { _concurrent_task_wrapper(task, progress_acknowledge); });
             } else {
                 _advancement.add_to_processing();
                 if (not Logger::instance().is_muted_at(0)) { progress_acknowledge(); _print_hold(); }
@@ -104,7 +104,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
 
   private:
 
-    bool _using_concurrency() const { return TaskManager::instance().concurrency() > 0; }
+    bool _using_concurrency() const { return ThreadManager::instance().concurrency() > 0; }
 
     void _concurrent_task_wrapper(CompletelyBoundFunctionType const& task, CompletelyBoundFunctionType const& progress_acknowledge) {
         _advancement.add_to_processing();
@@ -152,7 +152,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
             auto task = std::bind(std::forward<TaskFunctionType const>(_task_func), std::forward<E const&>(e));
             auto progress_acknowledge = std::bind(std::forward<ProgressAcknowledgeFunctionType const>(_progress_acknowledge_func),
                                                   std::forward<E const&>(e), _progress_indicator);
-            TaskManager::instance().enqueue([this,task,progress_acknowledge]{ _concurrent_task_wrapper(task,progress_acknowledge); });
+            ThreadManager::instance().enqueue([this,task,progress_acknowledge]{ _concurrent_task_wrapper(task, progress_acknowledge); });
         } else {
             // Locking and notification are used when concurrency is set to zero during processing, in order to avoid a race and to resume processing _sequential_queue respectively
             {
