@@ -27,7 +27,7 @@
  */
 
 #include <thread>
-#include "utility/test.hpp"
+#include "helper/test.hpp"
 #include "buffer.hpp"
 
 using namespace BetterThreads;
@@ -37,43 +37,43 @@ class TestBuffer {
 
     void test_construct() {
         Buffer<size_t> buffer(2);
-        UTILITY_TEST_EQUALS(buffer.size(),0);
-        UTILITY_TEST_EQUALS(buffer.capacity(),2);
+        HELPER_TEST_EQUALS(buffer.size(),0);
+        HELPER_TEST_EQUALS(buffer.capacity(),2);
     }
 
     void test_construct_invalid() {
-        UTILITY_TEST_FAIL(Buffer<size_t>(0));
+        HELPER_TEST_FAIL(Buffer<size_t>(0));
     }
 
     void test_set_capacity_when_empty() {
         Buffer<size_t> buffer(2);
         buffer.set_capacity(5);
-        UTILITY_TEST_EQUALS(buffer.capacity(),5);
+        HELPER_TEST_EQUALS(buffer.capacity(),5);
         buffer.set_capacity(3);
-        UTILITY_TEST_EQUALS(buffer.capacity(),3);
-        UTILITY_TEST_FAIL(buffer.set_capacity(0));
+        HELPER_TEST_EQUALS(buffer.capacity(),3);
+        HELPER_TEST_FAIL(buffer.set_capacity(0));
     }
 
     void test_set_capacity_when_filled() {
         Buffer<size_t> buffer(2);
         buffer.push(4);
         buffer.push(2);
-        UTILITY_TEST_EXECUTE(buffer.set_capacity(5));
-        UTILITY_TEST_FAIL(buffer.set_capacity(1));
+        HELPER_TEST_EXECUTE(buffer.set_capacity(5));
+        HELPER_TEST_FAIL(buffer.set_capacity(1));
         buffer.pull();
-        UTILITY_TEST_EXECUTE(buffer.set_capacity(1));
+        HELPER_TEST_EXECUTE(buffer.set_capacity(1));
     }
 
     void test_single_buffer() {
         Buffer<size_t> buffer(2);
         buffer.push(4);
         buffer.push(2);
-        UTILITY_TEST_EQUALS(buffer.size(),2);
+        HELPER_TEST_EQUALS(buffer.size(),2);
         auto o1 = buffer.pull();
         auto o2 = buffer.pull();
-        UTILITY_TEST_EQUALS(buffer.size(),0);
-        UTILITY_TEST_EQUALS(o1,4);
-        UTILITY_TEST_EQUALS(o2,2);
+        HELPER_TEST_EQUALS(buffer.size(),0);
+        HELPER_TEST_EQUALS(o1,4);
+        HELPER_TEST_EQUALS(o2,2);
     }
 
     void test_io_buffer() {
@@ -93,29 +93,29 @@ class TestBuffer {
         ib.push(4);
         ib.push(2);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        UTILITY_TEST_EQUALS(ib.size(),0);
-        UTILITY_TEST_EQUALS(ob.size(),2);
+        HELPER_TEST_EQUALS(ib.size(),0);
+        HELPER_TEST_EQUALS(ob.size(),2);
         auto o1 = ob.pull();
-        UTILITY_TEST_EQUALS(ob.size(),1);
-        UTILITY_TEST_EQUALS(o1,4);
+        HELPER_TEST_EQUALS(ob.size(),1);
+        HELPER_TEST_EQUALS(o1,4);
         auto o2 = ob.pull();
-        UTILITY_TEST_EQUALS(ob.size(),0);
-        UTILITY_TEST_EQUALS(o2,2);
+        HELPER_TEST_EQUALS(ob.size(),0);
+        HELPER_TEST_EQUALS(o2,2);
         ib.interrupt_consuming();
         thread.join();
     }
 
     void test() {
-        UTILITY_TEST_CALL(test_construct());
-        UTILITY_TEST_CALL(test_construct_invalid());
-        UTILITY_TEST_CALL(test_set_capacity_when_empty());
-        UTILITY_TEST_CALL(test_set_capacity_when_filled());
-        UTILITY_TEST_CALL(test_single_buffer());
-        UTILITY_TEST_CALL(test_io_buffer());
+        HELPER_TEST_CALL(test_construct());
+        HELPER_TEST_CALL(test_construct_invalid());
+        HELPER_TEST_CALL(test_set_capacity_when_empty());
+        HELPER_TEST_CALL(test_set_capacity_when_filled());
+        HELPER_TEST_CALL(test_single_buffer());
+        HELPER_TEST_CALL(test_io_buffer());
     }
 };
 
 int main() {
     TestBuffer().test();
-    return UTILITY_TEST_FAILURES;
+    return HELPER_TEST_FAILURES;
 }

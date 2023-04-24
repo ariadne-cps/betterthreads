@@ -32,7 +32,7 @@
 namespace BetterThreads {
 
 using ConcLog::Logger;
-using Utility::to_string;
+using Helper::to_string;
 
 Thread::Thread(VoidFunction task, String name, bool active)
         : _name(std::move(name)), _got_id_future(_got_id_promise.get_future()), _active(active), _ready_for_task_future(_ready_for_task_promise.get_future()),

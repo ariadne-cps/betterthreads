@@ -39,8 +39,8 @@
 #include <mutex>
 #include <atomic>
 #include <functional>
-#include "utility/macros.hpp"
-#include "utility/string.hpp"
+#include "helper/macros.hpp"
+#include "helper/string.hpp"
 
 namespace BetterThreads {
 
@@ -50,7 +50,7 @@ using std::promise;
 using std::future;
 
 using VoidFunction = std::function<void(void)>;
-using Utility::String;
+using Helper::String;
 
 //! \brief A class for handling a thread for a pool in a smarter way.
 //! \details It allows to wait for the start of the \a task before extracting the thread id, which is held along with

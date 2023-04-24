@@ -37,7 +37,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <queue>
-#include "utility/macros.hpp"
+#include "helper/macros.hpp"
 #include "using.hpp"
 
 namespace BetterThreads {
@@ -49,7 +49,7 @@ class BufferInterruptPullingException : public std::exception { };
 template<class E> class Buffer
 {
   public:
-    Buffer(size_t capacity) : _capacity(capacity), _interrupt(false) { UTILITY_PRECONDITION(capacity > 0); }
+    Buffer(size_t capacity) : _capacity(capacity), _interrupt(false) { HELPER_PRECONDITION(capacity > 0); }
 
     //! \brief Push an object into the buffer
     //! \details Will block if the capacity has been reached
@@ -85,8 +85,8 @@ template<class E> class Buffer
 
     //! \brief Change the capacity
     void set_capacity(size_t capacity) {
-        UTILITY_PRECONDITION(capacity>0);
-        UTILITY_ASSERT_MSG(capacity>=size(),"Reducing capacity below currenty buffer size is not allowed.");
+        HELPER_PRECONDITION(capacity>0);
+        HELPER_ASSERT_MSG(capacity>=size(),"Reducing capacity below currenty buffer size is not allowed.");
         _capacity = capacity;
     }
 

@@ -27,12 +27,12 @@
  */
 
 #include <functional>
-#include "utility/test.hpp"
-#include "utility/container.hpp"
+#include "helper/test.hpp"
+#include "helper/container.hpp"
 #include "workload.hpp"
 
 using namespace BetterThreads;
-using namespace Utility;
+using namespace Helper;
 
 template<class T> class SynchronisedList : public List<T> {
   public:
@@ -89,7 +89,7 @@ class TestWorkload {
         ThreadManager::instance().set_concurrency(0);
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &square_and_store, result);
-        UTILITY_TEST_EQUALS(wl.size(),0)
+        HELPER_TEST_EQUALS(wl.size(),0)
     }
 
     void test_append() {
@@ -97,16 +97,16 @@ class TestWorkload {
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &square_and_store, result);
         wl.append(2);
-        UTILITY_TEST_EQUALS(wl.size(),1)
+        HELPER_TEST_EQUALS(wl.size(),1)
         wl.append({10,20});
-        UTILITY_TEST_EQUALS(wl.size(),3)
+        HELPER_TEST_EQUALS(wl.size(),3)
     }
 
     void test_process_nothing() {
         ThreadManager::instance().set_maximum_concurrency();
         auto result = std::make_shared<std::atomic<int>>();
         StaticWorkloadType wl(&sum_all, result);
-        UTILITY_TEST_EXECUTE(wl.process())
+        HELPER_TEST_EXECUTE(wl.process())
     }
 
     void test_serial_processing_static() {
@@ -116,8 +116,8 @@ class TestWorkload {
         DynamicWorkloadType wl(&progress_acknowledge, &square_and_store, result);
         wl.append(2);
         wl.process();
-        UTILITY_TEST_PRINT(*result)
-        UTILITY_TEST_EQUALS(result->size(),5)
+        HELPER_TEST_PRINT(*result)
+        HELPER_TEST_EQUALS(result->size(),5)
     }
 
     void test_serial_processing_dynamic() {
@@ -127,8 +127,8 @@ class TestWorkload {
         DynamicWorkloadType wl(&progress_acknowledge, &square_and_store, result);
         wl.append(2);
         wl.process();
-        UTILITY_TEST_PRINT(*result)
-        UTILITY_TEST_EQUALS(result->size(),5)
+        HELPER_TEST_PRINT(*result)
+        HELPER_TEST_EQUALS(result->size(),5)
     }
 
     void test_concurrent_processing_static() {
@@ -138,7 +138,7 @@ class TestWorkload {
         StaticWorkloadType wl(&sum_all, result);
         wl.append({2,7,-3,5,8,10,5,8});
         wl.process();
-        UTILITY_TEST_EQUALS(*result,42)
+        HELPER_TEST_EQUALS(*result,42)
     }
 
     void test_concurrent_processing_dynamic() {
@@ -148,8 +148,8 @@ class TestWorkload {
         DynamicWorkloadType wl(&progress_acknowledge, &square_and_store, result);
         wl.append(2);
         wl.process();
-        UTILITY_TEST_PRINT(*result)
-        UTILITY_TEST_EQUALS(result->size(),5)
+        HELPER_TEST_PRINT(*result)
+        HELPER_TEST_EQUALS(result->size(),5)
     }
 
     void test_print_hold() {
@@ -167,7 +167,7 @@ class TestWorkload {
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &throw_exception_immediately, result);
         wl.append(2);
-        UTILITY_TEST_FAIL(wl.process())
+        HELPER_TEST_FAIL(wl.process())
     }
 
     void test_throw_serial_exception_later() {
@@ -175,7 +175,7 @@ class TestWorkload {
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &throw_exception_later, result);
         wl.append(2);
-        UTILITY_TEST_FAIL(wl.process())
+        HELPER_TEST_FAIL(wl.process())
     }
 
     void test_throw_concurrent_exception_immediately() {
@@ -183,7 +183,7 @@ class TestWorkload {
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &throw_exception_immediately, result);
         wl.append(2);
-        UTILITY_TEST_FAIL(wl.process())
+        HELPER_TEST_FAIL(wl.process())
     }
 
     void test_throw_concurrent_exception_later() {
@@ -191,7 +191,7 @@ class TestWorkload {
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
         DynamicWorkloadType wl(&progress_acknowledge, &throw_exception_later, result);
         wl.append(2);
-        UTILITY_TEST_FAIL(wl.process())
+        HELPER_TEST_FAIL(wl.process())
     }
 
     void test_multiple_append() {
@@ -202,8 +202,8 @@ class TestWorkload {
         result->append(3);
         wl.append({2,3});
         wl.process();
-        UTILITY_TEST_PRINT(*result)
-        UTILITY_TEST_EQUALS(result->size(),10)
+        HELPER_TEST_PRINT(*result)
+        HELPER_TEST_EQUALS(result->size(),10)
     }
 
     void test_multiple_process() {
@@ -217,31 +217,31 @@ class TestWorkload {
         result->append(3);
         wl.append(3);
         wl.process();
-        UTILITY_TEST_PRINT(*result)
-        UTILITY_TEST_EQUALS(result->size(),5)
+        HELPER_TEST_PRINT(*result)
+        HELPER_TEST_EQUALS(result->size(),5)
     }
 
     void test() {
-        UTILITY_TEST_CALL(test_construct_static())
-        UTILITY_TEST_CALL(test_construct_dynamic())
-        UTILITY_TEST_CALL(test_append())
-        UTILITY_TEST_CALL(test_process_nothing())
-        UTILITY_TEST_CALL(test_serial_processing_static())
-        UTILITY_TEST_CALL(test_serial_processing_dynamic())
-        UTILITY_TEST_CALL(test_concurrent_processing_static())
-        UTILITY_TEST_CALL(test_concurrent_processing_dynamic())
-        UTILITY_TEST_CALL(test_print_hold())
-        UTILITY_TEST_CALL(test_throw_serial_exception_immediately())
-        UTILITY_TEST_CALL(test_throw_serial_exception_later())
-        UTILITY_TEST_CALL(test_throw_concurrent_exception_immediately())
-        UTILITY_TEST_CALL(test_throw_concurrent_exception_later())
-        UTILITY_TEST_CALL(test_multiple_append())
-        UTILITY_TEST_CALL(test_multiple_process())
+        HELPER_TEST_CALL(test_construct_static())
+        HELPER_TEST_CALL(test_construct_dynamic())
+        HELPER_TEST_CALL(test_append())
+        HELPER_TEST_CALL(test_process_nothing())
+        HELPER_TEST_CALL(test_serial_processing_static())
+        HELPER_TEST_CALL(test_serial_processing_dynamic())
+        HELPER_TEST_CALL(test_concurrent_processing_static())
+        HELPER_TEST_CALL(test_concurrent_processing_dynamic())
+        HELPER_TEST_CALL(test_print_hold())
+        HELPER_TEST_CALL(test_throw_serial_exception_immediately())
+        HELPER_TEST_CALL(test_throw_serial_exception_later())
+        HELPER_TEST_CALL(test_throw_concurrent_exception_immediately())
+        HELPER_TEST_CALL(test_throw_concurrent_exception_later())
+        HELPER_TEST_CALL(test_multiple_append())
+        HELPER_TEST_CALL(test_multiple_process())
     }
 
 };
 
 int main() {
     TestWorkload().test();
-    return UTILITY_TEST_FAILURES;
+    return HELPER_TEST_FAILURES;
 }

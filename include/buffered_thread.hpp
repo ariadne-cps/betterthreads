@@ -39,14 +39,14 @@
 #include <mutex>
 #include <atomic>
 #include <functional>
-#include "utility/string.hpp"
+#include "helper/string.hpp"
 #include "templates.hpp"
 #include "buffer.hpp"
 #include "using.hpp"
 
 namespace BetterThreads {
 
-using Utility::String;
+using Helper::String;
 
 //! \brief A class for handling a thread that accepts multiple tasks to be enqueued.
 //! \details It allows to wait for the start of the \a task before extracting the thread id, which is held along with

@@ -26,7 +26,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "utility/macros.hpp"
+#include "helper/macros.hpp"
 #include "workload_advancement.hpp"
 
 namespace BetterThreads {
@@ -56,20 +56,20 @@ size_t WorkloadAdvancement::total() const {
 }
 
 void WorkloadAdvancement::add_to_waiting(size_t n) {
-    UTILITY_PRECONDITION(n > 0);
+    HELPER_PRECONDITION(n > 0);
     lock_guard<mutex> lock(_mux);
     _num_waiting+=n;
 }
 
 void WorkloadAdvancement::add_to_processing(size_t n) {
-    UTILITY_PRECONDITION(n <= _num_waiting);
+    HELPER_PRECONDITION(n <= _num_waiting);
     lock_guard<mutex> lock(_mux);
     _num_waiting-=n;
     _num_processing+=n;
 }
 
 void WorkloadAdvancement::add_to_completed(size_t n) {
-    UTILITY_PRECONDITION(n <=_num_processing);
+    HELPER_PRECONDITION(n <=_num_processing);
     lock_guard<mutex> lock(_mux);
     _num_processing-=n;
     _num_completed+=n;

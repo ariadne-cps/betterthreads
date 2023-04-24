@@ -35,8 +35,8 @@
 
 #include <functional>
 #include <iomanip>
-#include "utility/container.hpp"
-#include "utility/tuple.hpp"
+#include "helper/container.hpp"
+#include "helper/tuple.hpp"
 #include "conclog/progress_indicator.hpp"
 #include "workload_interface.hpp"
 #include "thread_manager.hpp"
@@ -48,8 +48,8 @@ using ConcLog::ProgressIndicator;
 using ConcLog::LogScopeManager;
 using ConcLog::Logger;
 
-using Utility::List;
-using Utility::make_lpair;
+using Helper::List;
+using Helper::make_lpair;
 
 using std::mutex;
 using std::unique_lock;
@@ -67,7 +67,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
     using CompletelyBoundFunctionType = std::function<void(void)>;
 
     void process() override {
-        _log_scope_manager.reset(new LogScopeManager(UTILITY_PRETTY_FUNCTION,0));
+        _log_scope_manager.reset(new LogScopeManager(HELPER_PRETTY_FUNCTION,0));
         _logger_level = Logger::instance().current_level();
         while (true) {
             unique_lock<mutex> lock(_element_availability_mutex);

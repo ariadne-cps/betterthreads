@@ -26,7 +26,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "utility/test.hpp"
+#include "helper/test.hpp"
 #include "workload_advancement.hpp"
 
 using namespace BetterThreads;
@@ -36,61 +36,61 @@ class TestWorkloadAdvancement {
 
     void test_creation() {
         WorkloadAdvancement wp(5);
-        UTILITY_TEST_EQUALS(wp.completion_rate(),0.0)
-        UTILITY_TEST_EQUALS(wp.waiting(),5)
-        UTILITY_TEST_EQUALS(wp.processing(),0)
-        UTILITY_TEST_EQUALS(wp.completed(),0)
-        UTILITY_TEST_EQUALS(wp.total(),5)
-        UTILITY_TEST_ASSERT(not wp.has_finished())
+        HELPER_TEST_EQUALS(wp.completion_rate(),0.0)
+        HELPER_TEST_EQUALS(wp.waiting(),5)
+        HELPER_TEST_EQUALS(wp.processing(),0)
+        HELPER_TEST_EQUALS(wp.completed(),0)
+        HELPER_TEST_EQUALS(wp.total(),5)
+        HELPER_TEST_ASSERT(not wp.has_finished())
     }
 
     void test_advance() {
         WorkloadAdvancement wp(3);
         wp.add_to_waiting();
-        UTILITY_TEST_EQUALS(wp.waiting(),4);
-        UTILITY_TEST_EQUALS(wp.total(),4)
+        HELPER_TEST_EQUALS(wp.waiting(),4);
+        HELPER_TEST_EQUALS(wp.total(),4)
         wp.add_to_processing();
-        UTILITY_TEST_EQUALS(wp.waiting(),3);
-        UTILITY_TEST_EQUALS(wp.processing(),1);
-        UTILITY_TEST_EQUALS(wp.total(),4)
+        HELPER_TEST_EQUALS(wp.waiting(),3);
+        HELPER_TEST_EQUALS(wp.processing(),1);
+        HELPER_TEST_EQUALS(wp.total(),4)
         wp.add_to_completed();
-        UTILITY_TEST_EQUALS(wp.processing(),0);
-        UTILITY_TEST_EQUALS(wp.completed(),1);
-        UTILITY_TEST_EQUALS(wp.total(),4)
-        UTILITY_TEST_EQUALS(wp.completion_rate(),0.25);
+        HELPER_TEST_EQUALS(wp.processing(),0);
+        HELPER_TEST_EQUALS(wp.completed(),1);
+        HELPER_TEST_EQUALS(wp.total(),4)
+        HELPER_TEST_EQUALS(wp.completion_rate(),0.25);
     }
 
     void test_finished() {
         WorkloadAdvancement wp;
-        UTILITY_TEST_ASSERT(wp.has_finished());
+        HELPER_TEST_ASSERT(wp.has_finished());
         wp.add_to_waiting(2);
-        UTILITY_TEST_ASSERT(not wp.has_finished());
+        HELPER_TEST_ASSERT(not wp.has_finished());
         wp.add_to_processing(2);
         wp.add_to_completed(2);
-        UTILITY_TEST_EQUALS(wp.completion_rate(),1.0);
-        UTILITY_TEST_ASSERT(wp.has_finished());
+        HELPER_TEST_EQUALS(wp.completion_rate(),1.0);
+        HELPER_TEST_ASSERT(wp.has_finished());
     }
 
     void test_invalid_transitions() {
         WorkloadAdvancement wp(4);
-        UTILITY_TEST_FAIL(wp.add_to_processing(5));
-        UTILITY_TEST_FAIL(wp.add_to_completed());
+        HELPER_TEST_FAIL(wp.add_to_processing(5));
+        HELPER_TEST_FAIL(wp.add_to_completed());
         wp.add_to_processing(2);
-        UTILITY_TEST_FAIL(wp.add_to_completed(3));
+        HELPER_TEST_FAIL(wp.add_to_completed(3));
         wp.add_to_completed(1);
-        UTILITY_TEST_EQUALS(wp.completion_rate(),0.25);
+        HELPER_TEST_EQUALS(wp.completion_rate(),0.25);
     }
 
     void test() {
-        UTILITY_TEST_CALL(test_creation());
-        UTILITY_TEST_CALL(test_advance());
-        UTILITY_TEST_CALL(test_finished());
-        UTILITY_TEST_CALL(test_invalid_transitions());
+        HELPER_TEST_CALL(test_creation());
+        HELPER_TEST_CALL(test_advance());
+        HELPER_TEST_CALL(test_finished());
+        HELPER_TEST_CALL(test_invalid_transitions());
     }
 
 };
 
 int main() {
     TestWorkloadAdvancement().test();
-    return UTILITY_TEST_FAILURES;
+    return HELPER_TEST_FAILURES;
 }

@@ -34,12 +34,12 @@
 #define BETTERTHREADS_WORKLOAD_INTERFACE_HPP
 
 #include <functional>
-#include "utility/container.hpp"
+#include "helper/container.hpp"
 #include "using.hpp"
 
 namespace BetterThreads {
 
-using Utility::List;
+using Helper::List;
 
 //! \brief Interface for a workload expressed as a stack of elements to work on, supplied with a function to process them
 //! \details E: stack element type

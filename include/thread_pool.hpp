@@ -35,7 +35,7 @@
 
 #include <queue>
 #include "conclog/logging.hpp"
-#include "utility/container.hpp"
+#include "helper/container.hpp"
 #include "thread.hpp"
 #include "templates.hpp"
 #include "using.hpp"
@@ -43,7 +43,7 @@
 namespace BetterThreads {
 
 using std::make_shared;
-using Utility::List;
+using Helper::List;
 
 const String THREAD_POOL_DEFAULT_NAME = "thr";
 

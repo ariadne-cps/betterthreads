@@ -27,7 +27,7 @@
  */
 
 #include <thread>
-#include "utility/test.hpp"
+#include "helper/test.hpp"
 #include "thread_manager.hpp"
 
 using namespace BetterThreads;
@@ -39,56 +39,56 @@ class TestThreadManager {
     void test_set_concurrency() {
         auto max_concurrency = ThreadManager::instance().maximum_concurrency();
         ThreadManager::instance().set_concurrency(max_concurrency);
-        UTILITY_TEST_EQUALS(ThreadManager::instance().concurrency(), max_concurrency)
+        HELPER_TEST_EQUALS(ThreadManager::instance().concurrency(), max_concurrency)
         ThreadManager::instance().set_maximum_concurrency();
-        UTILITY_TEST_EQUALS(ThreadManager::instance().concurrency(), max_concurrency)
-        UTILITY_TEST_FAIL(ThreadManager::instance().set_concurrency(1 + max_concurrency))
+        HELPER_TEST_EQUALS(ThreadManager::instance().concurrency(), max_concurrency)
+        HELPER_TEST_FAIL(ThreadManager::instance().set_concurrency(1 + max_concurrency))
     }
 
     void test_run_task_with_one_thread() {
         ThreadManager::instance().set_concurrency(1);
         int a = 10;
         auto result = ThreadManager::instance().enqueue([&a]{ return a * a; }).get();
-        UTILITY_TEST_EQUALS(result,100)
+        HELPER_TEST_EQUALS(result,100)
     }
 
     void test_run_task_with_multiple_threads() {
         ThreadManager::instance().set_concurrency(ThreadManager::instance().maximum_concurrency());
         int a = 10;
         auto result = ThreadManager::instance().enqueue([&a]{ return a * a; }).get();
-        UTILITY_TEST_EQUALS(result,100)
+        HELPER_TEST_EQUALS(result,100)
     }
 
     void test_run_task_with_no_threads() {
         ThreadManager::instance().set_concurrency(0);
         int a = 10;
         auto result = ThreadManager::instance().enqueue([&a]{ return a * a; }).get();
-        UTILITY_TEST_EQUALS(result,100)
+        HELPER_TEST_EQUALS(result,100)
     }
 
     void test_change_concurrency_and_log_scheduler() {
-        UTILITY_TEST_EXECUTE(ThreadManager::instance().set_concurrency(1))
-        UTILITY_TEST_FAIL(ThreadManager::instance().set_logging_immediate_scheduler())
-        UTILITY_TEST_FAIL(ThreadManager::instance().set_logging_blocking_scheduler())
-        UTILITY_TEST_FAIL(ThreadManager::instance().set_logging_nonblocking_scheduler())
-        UTILITY_TEST_EXECUTE(ThreadManager::instance().set_concurrency(0))
-        UTILITY_TEST_EXECUTE(ThreadManager::instance().set_logging_immediate_scheduler())
-        UTILITY_TEST_EXECUTE(ThreadManager::instance().set_logging_blocking_scheduler())
-        UTILITY_TEST_EXECUTE(ThreadManager::instance().set_logging_nonblocking_scheduler())
-        UTILITY_TEST_EXECUTE(ThreadManager::instance().set_concurrency(1))
-        UTILITY_TEST_EXECUTE(ThreadManager::instance().set_concurrency(0))
+        HELPER_TEST_EXECUTE(ThreadManager::instance().set_concurrency(1))
+        HELPER_TEST_FAIL(ThreadManager::instance().set_logging_immediate_scheduler())
+        HELPER_TEST_FAIL(ThreadManager::instance().set_logging_blocking_scheduler())
+        HELPER_TEST_FAIL(ThreadManager::instance().set_logging_nonblocking_scheduler())
+        HELPER_TEST_EXECUTE(ThreadManager::instance().set_concurrency(0))
+        HELPER_TEST_EXECUTE(ThreadManager::instance().set_logging_immediate_scheduler())
+        HELPER_TEST_EXECUTE(ThreadManager::instance().set_logging_blocking_scheduler())
+        HELPER_TEST_EXECUTE(ThreadManager::instance().set_logging_nonblocking_scheduler())
+        HELPER_TEST_EXECUTE(ThreadManager::instance().set_concurrency(1))
+        HELPER_TEST_EXECUTE(ThreadManager::instance().set_concurrency(0))
     }
 
     void test() {
-        UTILITY_TEST_CALL(test_set_concurrency())
-        UTILITY_TEST_CALL(test_run_task_with_one_thread())
-        UTILITY_TEST_CALL(test_run_task_with_multiple_threads())
-        UTILITY_TEST_CALL(test_run_task_with_no_threads())
-        UTILITY_TEST_CALL(test_change_concurrency_and_log_scheduler())
+        HELPER_TEST_CALL(test_set_concurrency())
+        HELPER_TEST_CALL(test_run_task_with_one_thread())
+        HELPER_TEST_CALL(test_run_task_with_multiple_threads())
+        HELPER_TEST_CALL(test_run_task_with_no_threads())
+        HELPER_TEST_CALL(test_change_concurrency_and_log_scheduler())
     }
 };
 
 int main() {
     TestThreadManager().test();
-    return UTILITY_TEST_FAILURES;
+    return HELPER_TEST_FAILURES;
 }

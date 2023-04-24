@@ -33,7 +33,7 @@
 namespace BetterThreads {
 
 using ConcLog::Logger;
-using Utility::to_string;
+using Helper::to_string;
 
 BufferedThread::BufferedThread(String name)
         : _name(name), _task_buffer(1), _got_id_future(_got_id_promise.get_future())
