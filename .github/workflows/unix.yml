@@ -19,39 +19,21 @@ jobs:
       matrix:
         config:
           - {
-            name: "macOS 14 AppleClang [Release]",
-            os: macos-14,
+            name: "macOS 15 AppleClang [Release]",
+            os: macos-15,
             cxx-cmd: "clang++"
           }
           - {
-            name: "macOS 14 GCC 11 [Release]",
-            os: macos-14,
-            cxx-pkg: "gcc@11",
-            cxx-cmd: "g++-11"
+            name: "Ubuntu 24.04 Clang 16 [Release]",
+            os: ubuntu-24.04,
+            cxx-pkg: "clang-16",
+            cxx-cmd: "clang++-16"
           }
           - {
-            name: "Ubuntu 22.04 Clang 11 [Release]",
-            os: ubuntu-22.04,
-            cxx-pkg: "clang-11",
-            cxx-cmd: "clang++-11"
-          }
-          - {
-            name: "Ubuntu 22.04 Clang 14 [Release]",
-            os: ubuntu-22.04,
-            cxx-pkg: "clang-14",
-            cxx-cmd: "clang++-14"
-          }
-          - {
-            name: "Ubuntu 22.04 GCC 10 [Release]",
-            os: ubuntu-22.04,
-            cxx-pkg: "g++-10",
-            cxx-cmd: "g++-10"
-          }
-          - {
-            name: "Ubuntu 22.04 GCC 11 [Release]",
-            os: ubuntu-22.04,
-            cxx-pkg: "g++-11",
-            cxx-cmd: "g++-11"
+            name: "Ubuntu 24.04 GCC 13 [Release]",
+            os: ubuntu-24.04,
+            cxx-pkg: "g++-13",
+            cxx-cmd: "g++-13"
           }
 
     steps:
