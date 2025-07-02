@@ -16,8 +16,8 @@ jobs:
       matrix:
         config:
           - {
-            name: "Windows 2025 [Release]",
-            os: windows-2025,
+            name: "Windows 2022 [Release]",
+            os: windows-2022,
             build-type: "Release"
           }
     steps:
