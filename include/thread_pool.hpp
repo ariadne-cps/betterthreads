@@ -86,6 +86,8 @@ class ThreadPool {
     VoidFunction _task_wrapper_function(size_t i);
     //! \brief Append threads in the given range
     void _append_thread_range(size_t lower, size_t upper);
+    //! \brief Enqueue an already type-erased task
+    void _enqueue_task(VoidFunction task);
 
   private:
     const String _name;
@@ -108,12 +110,7 @@ auto ThreadPool::enqueue(F &&f, AS &&... args) -> future<ResultOf<F(AS...)>> {
 
     auto task = make_shared<packaged_task<ReturnType()> >(std::bind(std::forward<F>(f), std::forward<AS>(args)...));
     future<ReturnType> result = task->get_future();
-    {
-        unique_lock<mutex> lock(_task_availability_mutex);
-        if (_finish_all_and_stop) throw StoppedThreadPoolException();
-        _tasks.emplace([task]{ (*task)(); });
-    }
-    _task_availability_condition.notify_one();
+    _enqueue_task([task]{ (*task)(); });
     return result;
 }
 

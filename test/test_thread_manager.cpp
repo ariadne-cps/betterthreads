@@ -67,22 +67,35 @@ class TestThreadManager {
     }
 
 
+    void test_void_task_with_no_threads() {
+        ThreadManager::instance().set_concurrency(0);
+        std::atomic<bool> executed = false;
+        ThreadManager::instance().enqueue(VoidFunction([&] { executed = true; })).get();
+        HELPER_TEST_ASSERT(executed.load())
+    }
+
     void test_concurrency_read_during_shrink() {
         if (ThreadManager::instance().maximum_concurrency() < 2) return;
         ThreadManager::instance().set_concurrency(2);
         std::atomic<bool> task_started = false;
-        std::atomic<bool> task_finished = false;
-        auto future = ThreadManager::instance().enqueue([&] {
+        std::atomic<bool> allow_read = false;
+
+        auto future = ThreadManager::instance().enqueue(VoidFunction([&] {
             task_started = true;
-            std::this_thread::sleep_for(10ms);
-            auto current = ThreadManager::instance().concurrency();
-            task_finished = true;
-            return current;
-        });
+            while (not allow_read.load()) std::this_thread::yield();
+            HELPER_TEST_EQUALS(ThreadManager::instance().concurrency(),1)
+        }));
+
         while (not task_started.load()) std::this_thread::yield();
-        ThreadManager::instance().set_concurrency(1);
-        HELPER_TEST_ASSERT(task_finished.load())
-        HELPER_TEST_EQUALS(future.get(),1)
+
+        auto shrink = std::async(std::launch::async,[] {
+            ThreadManager::instance().set_concurrency(1);
+        });
+
+        while (ThreadManager::instance().concurrency() != 1) std::this_thread::yield();
+        allow_read = true;
+        future.get();
+        shrink.get();
         ThreadManager::instance().set_concurrency(0);
     }
 
@@ -90,9 +103,9 @@ class TestThreadManager {
     void test_worker_cannot_shrink_manager() {
         if (ThreadManager::instance().maximum_concurrency() == 0) return;
         ThreadManager::instance().set_concurrency(1);
-        auto future = ThreadManager::instance().enqueue([] {
+        auto future = ThreadManager::instance().enqueue(VoidFunction([] {
             ThreadManager::instance().set_concurrency(0);
-        });
+        }));
         HELPER_TEST_FAIL(future.get())
         HELPER_TEST_EQUALS(ThreadManager::instance().concurrency(),1)
         ThreadManager::instance().set_concurrency(0);
@@ -116,6 +129,8 @@ class TestThreadManager {
         HELPER_TEST_CALL(test_run_task_with_one_thread())
         HELPER_TEST_CALL(test_run_task_with_multiple_threads())
         HELPER_TEST_CALL(test_run_task_with_no_threads())
+        HELPER_TEST_CALL(test_void_task_with_no_threads())
+        HELPER_TEST_CALL(test_concurrency_read_during_shrink())
         HELPER_TEST_CALL(test_worker_cannot_shrink_manager())
         HELPER_TEST_CALL(test_change_concurrency_and_log_scheduler())
     }

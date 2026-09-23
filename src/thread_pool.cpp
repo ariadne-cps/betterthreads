@@ -38,6 +38,14 @@ String construct_thread_name(String prefix, size_t number, size_t max_number) {
     return ss.str();
 }
 
+void ThreadPool::_enqueue_task(VoidFunction task) {
+    {
+        lock_guard<mutex> lock(_task_availability_mutex);
+        _tasks.emplace(std::move(task));
+    }
+    _task_availability_condition.notify_one();
+}
+
 VoidFunction ThreadPool::_task_wrapper_function(size_t i) {
     return [i, this] {
         while (true) {
@@ -55,8 +63,9 @@ VoidFunction ThreadPool::_task_wrapper_function(size_t i) {
                 }
                 task = std::move(_tasks.front());
                 _tasks.pop();
+                lock.unlock();
+                task();
             }
-            task();
         }
     };
 }
