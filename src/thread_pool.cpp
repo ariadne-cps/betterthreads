@@ -46,21 +46,27 @@ VoidFunction ThreadPool::_task_wrapper_function(size_t i) {
             {
                 unique_lock<mutex> lock(_task_availability_mutex);
                 _task_availability_condition.wait(lock, [=, this] {
-                    return _finish_all_and_stop or (_num_active_threads > _num_threads_to_use) or not _tasks.empty();
+                    return _finish_all_and_stop or i>=_num_threads_to_use or not _tasks.empty();
                 });
                 if (_finish_all_and_stop and _tasks.empty()) return;
                 if (not _tasks.empty()) {
                     task = std::move(_tasks.front());
                     _tasks.pop();
                     got_task = true;
+                } else if (i>=_num_threads_to_use) {
+                    _num_active_threads--;
+                    if (_num_active_threads == _num_threads_to_use) _all_unused_threads_stopped_promise.set_value();
+                    return;
                 }
             }
             if (got_task) task();
-            if (i>=_num_threads_to_use) {
-                lock_guard<mutex> active_threads_lock(_num_active_threads_mutex);
-                _num_active_threads--;
-                if (_num_active_threads == _num_threads_to_use) _all_unused_threads_stopped_promise.set_value();
-                return;
+            {
+                lock_guard<mutex> lock(_task_availability_mutex);
+                if (i>=_num_threads_to_use) {
+                    _num_active_threads--;
+                    if (_num_active_threads == _num_threads_to_use) _all_unused_threads_stopped_promise.set_value();
+                    return;
+                }
             }
         }
     };
@@ -91,11 +97,18 @@ size_t ThreadPool::num_threads() const {
 void ThreadPool::set_num_threads(size_t number) {
     lock_guard<mutex> lock(_num_threads_mutex);
     auto old_size = _threads.size();
-    _num_threads_to_use = number;
     if (number > old_size) {
-        _num_active_threads = number;
+        {
+            lock_guard<mutex> task_lock(_task_availability_mutex);
+            _num_threads_to_use = number;
+            _num_active_threads = number;
+        }
         _append_thread_range(old_size,number);
     } else if (number < old_size) {
+        {
+            lock_guard<mutex> task_lock(_task_availability_mutex);
+            _num_threads_to_use = number;
+        }
         _task_availability_condition.notify_all();
         _all_unused_threads_stopped_future.get();
         _threads.resize(number);
