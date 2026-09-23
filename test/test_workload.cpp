@@ -256,6 +256,25 @@ class TestWorkload {
         ThreadManager::instance().set_concurrency(0);
     }
 
+
+    void test_concurrent_logger_level_decrease() {
+        if (ThreadManager::instance().maximum_concurrency() == 0) return;
+
+        ThreadManager::instance().set_concurrency(0);
+        Logger::instance().configuration().set_verbosity(0);
+        Logger::instance().increase_level(1);
+        ThreadManager::instance().set_concurrency(1);
+        Logger::instance().decrease_level(1);
+
+        auto result = std::make_shared<std::atomic<int>>(0);
+        StaticWorkloadType workload(&sum_all,result);
+        workload.append(1);
+        workload.process();
+
+        HELPER_TEST_EQUALS(result->load(),1)
+        ThreadManager::instance().set_concurrency(0);
+    }
+
     void test_concurrent_process_is_rejected() {
         ThreadManager::instance().set_concurrency(0);
         auto state = std::make_shared<ProcessConcurrencyState>();
@@ -372,6 +391,7 @@ class TestWorkload {
         HELPER_TEST_CALL(test_throw_concurrent_exception_immediately())
         HELPER_TEST_CALL(test_throw_concurrent_exception_later())
         HELPER_TEST_CALL(test_concurrent_logger_level_increase())
+        HELPER_TEST_CALL(test_concurrent_logger_level_decrease())
         HELPER_TEST_CALL(test_concurrent_process_is_rejected())
         HELPER_TEST_CALL(test_progress_acknowledgement_is_serialised())
         HELPER_TEST_CALL(test_concurrent_exception_waits_for_running_tasks())
