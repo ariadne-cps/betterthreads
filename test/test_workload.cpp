@@ -94,6 +94,17 @@ struct ProgressConcurrencyState {
     std::atomic<size_t> maximum = 0;
 };
 
+
+struct ConcurrentDoubleExceptionState {
+    std::atomic<size_t> ready = 0;
+};
+
+void throw_together(int const&, std::shared_ptr<ConcurrentDoubleExceptionState> state) {
+    ++state->ready;
+    while (state->ready.load() < 2) std::this_thread::yield();
+    throw std::runtime_error("expected");
+}
+
 struct ConcurrentExceptionState {
     std::atomic<bool> slow_started = false;
     std::atomic<bool> slow_finished = false;
@@ -313,6 +324,19 @@ class TestWorkload {
         Logger::instance().configuration().set_verbosity(0);
     }
 
+
+    void test_multiple_concurrent_exceptions_preserve_first() {
+        if (ThreadManager::instance().maximum_concurrency() < 2) return;
+        ThreadManager::instance().set_concurrency(2);
+
+        auto state = std::make_shared<ConcurrentDoubleExceptionState>();
+        StaticWorkload<int,std::shared_ptr<ConcurrentDoubleExceptionState>> workload(&throw_together,state);
+        workload.append({1,2});
+
+        HELPER_TEST_FAIL(workload.process())
+        HELPER_TEST_EQUALS(state->ready.load(),2)
+    }
+
     void test_concurrent_exception_waits_for_running_tasks() {
         if (ThreadManager::instance().maximum_concurrency() < 2) return;
         ThreadManager::instance().set_concurrency(2);
@@ -394,6 +418,7 @@ class TestWorkload {
         HELPER_TEST_CALL(test_concurrent_logger_level_decrease())
         HELPER_TEST_CALL(test_concurrent_process_is_rejected())
         HELPER_TEST_CALL(test_progress_acknowledgement_is_serialised())
+        HELPER_TEST_CALL(test_multiple_concurrent_exceptions_preserve_first())
         HELPER_TEST_CALL(test_concurrent_exception_waits_for_running_tasks())
         HELPER_TEST_CALL(test_reuse_after_serial_exception())
         HELPER_TEST_CALL(test_reuse_after_concurrent_exception())

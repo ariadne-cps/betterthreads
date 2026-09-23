@@ -68,7 +68,7 @@ class WorkloadCore {
         HELPER_PRECONDITION(process_lock.owns_lock());
         _log_scope_manager.reset(new LogScopeManager(HELPER_PRETTY_FUNCTION,0));
         _logger_level = Logger::instance().current_level();
-        while (true) {
+        for (;;) {
             unique_lock<mutex> lock(_element_availability_mutex);
             _element_availability_condition.wait(lock, [this] {
                 if (_exception != nullptr) return _advancement.processing() == 0;
