@@ -188,11 +188,12 @@ class TestSmartThreadPool {
     void test_set_num_threads_down_dynamically() const {
         ThreadPool pool(3);
         VoidFunction fn([] { std::this_thread::sleep_for(100ms); });
+        std::vector<future<void>> futures;
         for (size_t i=0; i<5; ++i)
-            pool.enqueue(fn);
+            futures.push_back(pool.enqueue(fn));
         HELPER_TEST_EXECUTE(pool.set_num_threads(2));
         HELPER_TEST_EQUAL(pool.num_threads(),2);
-        std::this_thread::sleep_for(200ms);
+        for (auto& future : futures) future.get();
         HELPER_TEST_EQUALS(pool.queue_size(),0);
     }
 
