@@ -78,6 +78,17 @@ void throw_exception_later(DynamicWorkloadType::Access& wla, int const& val, std
 
 
 
+
+struct ProcessConcurrencyState {
+    std::atomic<bool> started = false;
+    std::atomic<bool> release = false;
+};
+
+void block_until_released(int const&, std::shared_ptr<ProcessConcurrencyState> state) {
+    state->started = true;
+    while (not state->release.load()) std::this_thread::yield();
+}
+
 struct ProgressConcurrencyState {
     std::atomic<size_t> active = 0;
     std::atomic<size_t> maximum = 0;
@@ -225,6 +236,19 @@ class TestWorkload {
 
 
 
+
+    void test_concurrent_process_is_rejected() {
+        ThreadManager::instance().set_concurrency(0);
+        auto state = std::make_shared<ProcessConcurrencyState>();
+        StaticWorkload<int,std::shared_ptr<ProcessConcurrencyState>> wl(&block_until_released,state);
+        wl.append(1);
+        std::thread processor([&wl] { wl.process(); });
+        while (not state->started.load()) std::this_thread::yield();
+        HELPER_TEST_FAIL(wl.process())
+        state->release = true;
+        processor.join();
+    }
+
     void test_progress_acknowledgement_is_serialised() {
         if (ThreadManager::instance().maximum_concurrency() < 2) return;
         ThreadManager::instance().set_concurrency(2);
@@ -328,6 +352,7 @@ class TestWorkload {
         HELPER_TEST_CALL(test_throw_serial_exception_later())
         HELPER_TEST_CALL(test_throw_concurrent_exception_immediately())
         HELPER_TEST_CALL(test_throw_concurrent_exception_later())
+        HELPER_TEST_CALL(test_concurrent_process_is_rejected())
         HELPER_TEST_CALL(test_progress_acknowledgement_is_serialised())
         HELPER_TEST_CALL(test_concurrent_exception_waits_for_running_tasks())
         HELPER_TEST_CALL(test_reuse_after_serial_exception())

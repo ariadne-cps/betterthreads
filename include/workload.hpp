@@ -67,6 +67,8 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
     using CompletelyBoundFunctionType = std::function<void(void)>;
 
     void process() override {
+        unique_lock<mutex> process_lock(_process_mutex,std::try_to_lock);
+        HELPER_PRECONDITION(process_lock.owns_lock());
         _log_scope_manager.reset(new LogScopeManager(HELPER_PRETTY_FUNCTION,0));
         _logger_level = Logger::instance().current_level();
         while (true) {
@@ -204,6 +206,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
     shared_ptr<ProgressIndicator> _progress_indicator; // The progress indicator to hold print
 
     mutable mutex _element_availability_mutex;
+    mutex _process_mutex;
     mutex _progress_mutex;
     condition_variable _element_availability_condition;
 
