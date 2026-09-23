@@ -137,7 +137,9 @@ if(NOT TARGET betterthreads)
                     test_workload_advancement
                     test_workload
                 DEPENDENCIES tests
-                EXCLUDE_REGEX ".*/(test|submodules)/.*|^/usr/.*|^/opt/homebrew/.*"
+                SOURCES
+                    "${PROJECT_SOURCE_DIR}/include"
+                    "${PROJECT_SOURCE_DIR}/src"
             )
         else()
             include(GCCCodeCoverage)

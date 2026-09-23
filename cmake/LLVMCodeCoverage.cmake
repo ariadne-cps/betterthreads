@@ -42,7 +42,7 @@ endfunction()
 function(setup_target_for_coverage_llvm)
     set(options NONE)
     set(oneValueArgs NAME TARGET EXCLUDE_REGEX)
-    set(multiValueArgs DEPENDENCIES OBJECTS)
+    set(multiValueArgs DEPENDENCIES OBJECTS SOURCES)
     cmake_parse_arguments(Coverage "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     if(NOT Coverage_NAME)
@@ -99,6 +99,7 @@ endif()
                 ${LLVM_COV_OBJECT_ARGS}
                 "-instr-profile=${PROFDATA_FILE}"
                 ${LLVM_COV_FILTER_ARGS}
+                ${Coverage_SOURCES}
         COMMAND "${CMAKE_COMMAND}" -E make_directory "${HTML_DIR}"
         COMMAND "${LLVM_COV_EXECUTABLE}" show
                 "$<TARGET_FILE:${Coverage_TARGET}>"
@@ -107,6 +108,7 @@ endif()
                 "-format=html"
                 "-output-dir=${HTML_DIR}"
                 ${LLVM_COV_FILTER_ARGS}
+                ${Coverage_SOURCES}
         WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
         DEPENDS ${Coverage_DEPENDENCIES} ${Coverage_TARGET} ${Coverage_OBJECTS}
         VERBATIM
