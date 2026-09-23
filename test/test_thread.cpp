@@ -86,6 +86,14 @@ class TestThread {
         HELPER_TEST_EQUALS(executions.load(),0)
     }
 
+    void test_activate() const {
+        std::atomic<size_t> executions = 0;
+        Thread thread([&executions] { ++executions; },"inactive",false);
+        thread.activate();
+        std::this_thread::sleep_for(10ms);
+        HELPER_TEST_EQUALS(executions,1)
+    }
+
     void test_concurrent_activate() const {
         std::atomic<size_t> executions = 0;
         Thread thread([&executions] { ++executions; },"inactive",false);
@@ -118,6 +126,7 @@ class TestThread {
         HELPER_TEST_CALL(test_task())
         HELPER_TEST_CALL(test_exception())
         HELPER_TEST_CALL(test_destroy_inactive())
+        HELPER_TEST_CALL(test_activate())
         HELPER_TEST_CALL(test_concurrent_activate())
         HELPER_TEST_CALL(test_atomic_multiple_threads())
     }
