@@ -63,10 +63,10 @@ class TestThread {
     }
 
     void test_task() const {
-        int a = 0;
+        std::atomic<int> a = 0;
         Thread thread([&a] { a++; });
         std::this_thread::sleep_for(10ms);
-        HELPER_TEST_EQUALS(a,1)
+        HELPER_TEST_EQUALS(a.load(),1)
         HELPER_TEST_ASSERT(thread.exception() == nullptr)
     }
 
