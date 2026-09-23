@@ -22,6 +22,11 @@ else()
     message(WARNING "You are using an unsupported compiler! MSVC, GCC and Clang are supported.")
 endif()
 
+if(COVERAGE AND APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang")
+    include(LLVMCodeCoverage)
+    append_llvm_coverage_compiler_flags()
+endif()
+
 if(WIN32)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
     set(LIBRARY_KIND STATIC)
@@ -106,7 +111,7 @@ if(NOT TARGET betterthreads)
     add_library(betterthreads ${LIBRARY_KIND} $<TARGET_OBJECTS:BETTERTHREADS_SRC>)
 
     if(NOT TARGET tests)
-        if(COVERAGE)
+        if(COVERAGE AND NOT (APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang"))
             include(CodeCoverage)
             append_coverage_compiler_flags()
         endif()
@@ -118,4 +123,20 @@ if(NOT TARGET betterthreads)
     add_subdirectory(submodules)
     target_link_libraries(betterthreads conclog helper ${CMAKE_THREAD_LIBS_INIT})
 
+    if(COVERAGE)
+        if(APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang")
+            setup_target_for_coverage_llvm(
+                NAME coverage
+                TARGET betterthreads
+                DEPENDENCIES tests
+                EXCLUDE_REGEX ".*/(test|submodules)/.*"
+            )
+        else()
+            include(GCCCodeCoverage)
+            setup_target_for_coverage_gcc(
+                NAME coverage
+                DEPENDENCIES tests
+            )
+        endif()
+    endif()
 endif()
