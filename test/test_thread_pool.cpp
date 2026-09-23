@@ -196,6 +196,19 @@ class TestSmartThreadPool {
         HELPER_TEST_EQUALS(pool.queue_size(),0);
     }
 
+    void test_resize_repeatedly() const {
+        ThreadPool pool(4);
+        std::atomic<size_t> completed = 0;
+        for (size_t round=0; round<20; ++round) {
+            for (size_t i=0; i<16; ++i)
+                pool.enqueue([&completed] { ++completed; });
+            pool.set_num_threads(2);
+            pool.set_num_threads(4);
+        }
+        pool.set_num_threads(0);
+        HELPER_TEST_EQUALS(completed,320)
+    }
+
     void test_set_num_threads_to_zero_dynamically() const {
         ThreadPool pool(3);
         VoidFunction fn([] { std::this_thread::sleep_for(100ms); });
