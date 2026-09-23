@@ -129,7 +129,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
         if (_advancement.has_finished()) { _element_availability_condition.notify_one(); }
     }
 
-    void _default_progress_acknowledge(E const& e, shared_ptr<ProgressIndicator> indicator) {
+    void _default_progress_acknowledge(E const&, shared_ptr<ProgressIndicator> indicator) {
         indicator->update_current(static_cast<double>(_advancement.completed()));
         indicator->update_final(static_cast<double>(_advancement.total()));
     }
