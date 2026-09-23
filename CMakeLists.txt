@@ -25,6 +25,7 @@ endif()
 if(COVERAGE AND APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang")
     include(LLVMCodeCoverage)
     append_llvm_coverage_compiler_flags()
+    add_compile_options(-Xclang -system-headers-coverage)
 endif()
 
 if(WIN32)
@@ -103,8 +104,7 @@ endif()
 
 find_package(Threads REQUIRED)
 
-include_directories(${PROJECT_SOURCE_DIR}/include)
-include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/submodules/.symbolic)
+include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/submodules/.symbolic)
 
 if(NOT TARGET betterthreads)
     add_subdirectory(src)
