@@ -42,7 +42,7 @@ endfunction()
 function(setup_target_for_coverage_llvm)
     set(options NONE)
     set(oneValueArgs NAME TARGET EXCLUDE_REGEX)
-    set(multiValueArgs DEPENDENCIES)
+    set(multiValueArgs DEPENDENCIES OBJECTS)
     cmake_parse_arguments(Coverage "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     if(NOT Coverage_NAME)
@@ -54,6 +54,14 @@ function(setup_target_for_coverage_llvm)
     if(NOT TARGET ${Coverage_TARGET})
         message(FATAL_ERROR "Coverage target '${Coverage_TARGET}' does not exist.")
     endif()
+
+    set(LLVM_COV_OBJECT_ARGS "")
+    foreach(Coverage_OBJECT IN LISTS Coverage_OBJECTS)
+        if(NOT TARGET ${Coverage_OBJECT})
+            message(FATAL_ERROR "Coverage object target '${Coverage_OBJECT}' does not exist.")
+        endif()
+        list(APPEND LLVM_COV_OBJECT_ARGS "-object=$<TARGET_FILE:${Coverage_OBJECT}>")
+    endforeach()
 
     set(PROFILE_DIR "${PROJECT_BINARY_DIR}/coverage/profiles")
     set(PROFDATA_FILE "${PROJECT_BINARY_DIR}/coverage/coverage.profdata")
@@ -88,17 +96,19 @@ endif()
         COMMAND "${CMAKE_COMMAND}" -P "${MERGE_SCRIPT}"
         COMMAND "${LLVM_COV_EXECUTABLE}" report
                 "$<TARGET_FILE:${Coverage_TARGET}>"
+                ${LLVM_COV_OBJECT_ARGS}
                 "-instr-profile=${PROFDATA_FILE}"
                 ${LLVM_COV_FILTER_ARGS}
         COMMAND "${CMAKE_COMMAND}" -E make_directory "${HTML_DIR}"
         COMMAND "${LLVM_COV_EXECUTABLE}" show
                 "$<TARGET_FILE:${Coverage_TARGET}>"
+                ${LLVM_COV_OBJECT_ARGS}
                 "-instr-profile=${PROFDATA_FILE}"
                 "-format=html"
                 "-output-dir=${HTML_DIR}"
                 ${LLVM_COV_FILTER_ARGS}
         WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
-        DEPENDS ${Coverage_DEPENDENCIES} ${Coverage_TARGET}
+        DEPENDS ${Coverage_DEPENDENCIES} ${Coverage_TARGET} ${Coverage_OBJECTS}
         VERBATIM
         COMMENT "Running tests and generating LLVM code coverage report."
     )

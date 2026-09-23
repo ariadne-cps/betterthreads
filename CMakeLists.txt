@@ -128,8 +128,16 @@ if(NOT TARGET betterthreads)
             setup_target_for_coverage_llvm(
                 NAME coverage
                 TARGET betterthreads
+                OBJECTS
+                    test_buffer
+                    test_buffered_thread
+                    test_thread
+                    test_thread_pool
+                    test_thread_manager
+                    test_workload_advancement
+                    test_workload
                 DEPENDENCIES tests
-                EXCLUDE_REGEX ".*/(test|submodules)/.*"
+                EXCLUDE_REGEX ".*/(test|submodules)/.*|^/usr/.*|^/opt/homebrew/.*"
             )
         else()
             include(GCCCodeCoverage)
