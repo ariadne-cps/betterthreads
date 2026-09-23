@@ -61,7 +61,7 @@ class WorkloadCore {
   protected:
     using CompletelyBoundFunctionType = std::function<void(void)>;
 
-    WorkloadCore() : _advancement(0), _logger_level(0), _progress_indicator(new ProgressIndicator(0)) { }
+    WorkloadCore() : _advancement(0), _progress_indicator(new ProgressIndicator(0)), _logger_level(0) { }
 
     void _process() {
         unique_lock<mutex> process_lock(_process_mutex,std::try_to_lock);
