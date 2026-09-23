@@ -76,6 +76,18 @@ class TestThread {
         HELPER_TEST_ASSERT(thread.exception() != nullptr)
     }
 
+
+    void test_concurrent_activate() const {
+        std::atomic<size_t> executions = 0;
+        Thread thread([&executions] { ++executions; },"inactive",false);
+        std::thread first([&thread] { thread.activate(); });
+        std::thread second([&thread] { thread.activate(); });
+        first.join();
+        second.join();
+        std::this_thread::sleep_for(10ms);
+        HELPER_TEST_EQUALS(executions,1)
+    }
+
     void test_atomic_multiple_threads() const {
         size_t n_threads = 10*std::thread::hardware_concurrency();
         HELPER_TEST_PRINT(n_threads)

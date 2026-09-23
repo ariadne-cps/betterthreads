@@ -76,6 +76,23 @@ void throw_exception_later(DynamicWorkloadType::Access& wla, int const& val, std
     else wla.append(next_val);
 }
 
+
+struct ConcurrentExceptionState {
+    std::atomic<bool> slow_started = false;
+    std::atomic<bool> slow_finished = false;
+};
+
+void throw_while_other_task_runs(int const& val, std::shared_ptr<ConcurrentExceptionState> state) {
+    if (val == 1) {
+        state->slow_started = true;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        state->slow_finished = true;
+        return;
+    }
+    while (not state->slow_started) std::this_thread::yield();
+    throw std::runtime_error("expected");
+}
+
 class TestWorkload {
   public:
 
@@ -192,6 +209,17 @@ class TestWorkload {
         DynamicWorkloadType wl(&progress_acknowledge, &throw_exception_later, result);
         wl.append(2);
         HELPER_TEST_FAIL(wl.process())
+    }
+
+
+    void test_concurrent_exception_waits_for_running_tasks() {
+        if (ThreadManager::instance().maximum_concurrency() < 2) return;
+        ThreadManager::instance().set_concurrency(2);
+        auto state = std::make_shared<ConcurrentExceptionState>();
+        StaticWorkload<int,std::shared_ptr<ConcurrentExceptionState>> wl(&throw_while_other_task_runs, state);
+        wl.append({1,0});
+        HELPER_TEST_FAIL(wl.process())
+        HELPER_TEST_ASSERT(state->slow_finished)
     }
 
     void test_multiple_append() {

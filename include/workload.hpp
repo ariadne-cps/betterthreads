@@ -71,8 +71,15 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
         _logger_level = Logger::instance().current_level();
         while (true) {
             unique_lock<mutex> lock(_element_availability_mutex);
-            _element_availability_condition.wait(lock, [=,this] { return _advancement.has_finished() or not _sequential_queue.empty() or _exception != nullptr; });
-            if (_exception != nullptr) rethrow_exception(_exception);
+            _element_availability_condition.wait(lock, [=,this] {
+                if (_exception != nullptr) return _advancement.processing() == 0;
+                return _advancement.has_finished() or not _sequential_queue.empty();
+            });
+            if (_exception != nullptr) {
+                auto exception = _exception;
+                _log_scope_manager.reset();
+                rethrow_exception(exception);
+            }
             if (_advancement.has_finished()) { _log_scope_manager.reset(); return; }
 
             CompletelyBoundFunctionType task, progress_acknowledge;
@@ -134,7 +141,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
             lock_guard<mutex> lock(_element_availability_mutex);
             _advancement.add_to_completed();
         }
-        if (_advancement.has_finished()) { _element_availability_condition.notify_one(); }
+        _element_availability_condition.notify_one();
     }
 
     void _default_progress_acknowledge(E const&, shared_ptr<ProgressIndicator> indicator) {

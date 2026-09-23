@@ -70,8 +70,8 @@ String Thread::name() const {
 }
 
 void Thread::activate()  {
-    if (not _active) {
-        _active = true;
+    bool expected = false;
+    if (_active.compare_exchange_strong(expected,true)) {
         Logger::instance().register_thread(_id,_name);
         _ready_for_task_promise.set_value();
     }
