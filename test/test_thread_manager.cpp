@@ -86,6 +86,18 @@ class TestThreadManager {
         ThreadManager::instance().set_concurrency(0);
     }
 
+
+    void test_worker_cannot_shrink_manager() {
+        if (ThreadManager::instance().maximum_concurrency() == 0) return;
+        ThreadManager::instance().set_concurrency(1);
+        auto future = ThreadManager::instance().enqueue([] {
+            ThreadManager::instance().set_concurrency(0);
+        });
+        HELPER_TEST_FAIL(future.get())
+        HELPER_TEST_EQUALS(ThreadManager::instance().concurrency(),1)
+        ThreadManager::instance().set_concurrency(0);
+    }
+
     void test_change_concurrency_and_log_scheduler() {
         HELPER_TEST_EXECUTE(ThreadManager::instance().set_concurrency(1))
         HELPER_TEST_FAIL(ThreadManager::instance().set_logging_immediate_scheduler())
@@ -104,6 +116,7 @@ class TestThreadManager {
         HELPER_TEST_CALL(test_run_task_with_one_thread())
         HELPER_TEST_CALL(test_run_task_with_multiple_threads())
         HELPER_TEST_CALL(test_run_task_with_no_threads())
+        HELPER_TEST_CALL(test_worker_cannot_shrink_manager())
         HELPER_TEST_CALL(test_change_concurrency_and_log_scheduler())
     }
 };
