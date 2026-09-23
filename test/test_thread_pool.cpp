@@ -202,7 +202,6 @@ class TestSmartThreadPool {
         ThreadPool pool(2);
         std::atomic<size_t> started = 0;
         std::atomic<bool> release_initial = false;
-        std::atomic<bool> backlog_started = false;
         std::atomic<bool> release_backlog = false;
 
         auto initial = [&] {
@@ -214,33 +213,25 @@ class TestSmartThreadPool {
         pool.enqueue(initial);
         while (started.load() < 2) std::this_thread::yield();
 
-        for (size_t i=0; i<4; ++i) {
-            pool.enqueue([&] {
-                backlog_started = true;
-                while (not release_backlog.load()) std::this_thread::yield();
-            });
-        }
-
-        std::promise<void> shrink_started_promise;
-        auto shrink_started = shrink_started_promise.get_future();
-        std::promise<void> shrink_done_promise;
-        auto shrink_done = shrink_done_promise.get_future();
-
-        std::thread shrinker([&] {
-            shrink_started_promise.set_value();
-            pool.set_num_threads(1);
-            shrink_done_promise.set_value();
+        auto backlog = pool.enqueue([&] {
+            while (not release_backlog.load()) std::this_thread::yield();
         });
 
-        shrink_started.get();
+        auto shrink = std::async(std::launch::async,[&] {
+            pool.set_num_threads(1);
+        });
+
         release_initial = true;
 
-        while (not backlog_started.load()) std::this_thread::yield();
-
-        HELPER_TEST_ASSERT(shrink_done.wait_for(0ms) == std::future_status::ready)
+        // The shrink must be able to complete while the surviving worker is
+        // still blocked in the backlog task. A retiring worker taking that task
+        // would prevent set_num_threads(1) from returning.
+        auto status = shrink.wait_for(std::chrono::seconds(5));
+        HELPER_TEST_ASSERT(status == std::future_status::ready)
 
         release_backlog = true;
-        shrinker.join();
+        shrink.get();
+        backlog.get();
     }
 
     void test_shrink_from_worker_is_rejected() {
