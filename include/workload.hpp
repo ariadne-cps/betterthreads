@@ -56,24 +56,21 @@ using std::unique_lock;
 using std::lock_guard;
 using std::condition_variable;
 
-//! \brief Base class implementation
-template<class E, class... AS>
-class WorkloadBase : public WorkloadInterface<E,AS...> {
+//! \brief Non-template core shared by all workload instantiations
+class WorkloadCore {
   protected:
-    WorkloadBase() : _progress_acknowledge_func(std::bind_front(&WorkloadBase::_default_progress_acknowledge, this)), _advancement(0), _logger_level(0), _progress_indicator(new ProgressIndicator(0)) { }
-  public:
-    using TaskFunctionType = std::function<void(E const &)>;
-    using ProgressAcknowledgeFunctionType = std::function<void(E const &, shared_ptr<ProgressIndicator>)>;
     using CompletelyBoundFunctionType = std::function<void(void)>;
 
-    void process() override {
+    WorkloadCore() : _advancement(0), _logger_level(0), _progress_indicator(new ProgressIndicator(0)) { }
+
+    void _process() {
         unique_lock<mutex> process_lock(_process_mutex,std::try_to_lock);
         HELPER_PRECONDITION(process_lock.owns_lock());
         _log_scope_manager.reset(new LogScopeManager(HELPER_PRETTY_FUNCTION,0));
         _logger_level = Logger::instance().current_level();
         while (true) {
             unique_lock<mutex> lock(_element_availability_mutex);
-            _element_availability_condition.wait(lock, [=,this] {
+            _element_availability_condition.wait(lock, [this] {
                 if (_exception != nullptr) return _advancement.processing() == 0;
                 return _advancement.has_finished() or not _sequential_queue.empty();
             });
@@ -90,7 +87,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
             _sequential_queue.pop();
             lock.unlock();
             if (_using_concurrency()) {
-                ThreadManager::instance().enqueue([this, task, progress_acknowledge] { _concurrent_task_wrapper(task, progress_acknowledge); });
+                ThreadManager::instance().enqueue(VoidFunction([this, task, progress_acknowledge] { _concurrent_task_wrapper(task, progress_acknowledge); }));
             } else {
                 _advancement.add_to_processing();
                 if (not Logger::instance().is_muted_at(0)) {
@@ -110,28 +107,35 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
         }
     }
 
-    size_t size() const override {
+    size_t _size() const {
         lock_guard<mutex> lock(_element_availability_mutex);
         return _sequential_queue.size();
     }
 
-    WorkloadInterface<E,AS...>& append(E const& e) override {
+    void _append_bound(CompletelyBoundFunctionType task, CompletelyBoundFunctionType progress_acknowledge) {
         {
             lock_guard<mutex> lock(_element_availability_mutex);
             _advancement.add_to_waiting();
-            _sequential_queue.push(std::make_pair(std::bind(std::forward<TaskFunctionType const>(_task_func), std::forward<E const&>(e)),
-                                                       std::bind(std::forward<ProgressAcknowledgeFunctionType const>(_progress_acknowledge_func), std::forward<E const&>(e),
-                                                      _progress_indicator)
-                             ));
+            _sequential_queue.emplace(std::move(task),std::move(progress_acknowledge));
         }
         _element_availability_condition.notify_one();
-        return *this;
     }
 
-    WorkloadInterface<E,AS...>& append(List<E> const& es) override { for (auto e : es) append(e); return *this; }
+    void _enqueue_bound(CompletelyBoundFunctionType task, CompletelyBoundFunctionType progress_acknowledge) {
+        if (_using_concurrency()) {
+            _advancement.add_to_waiting();
+            ThreadManager::instance().enqueue(VoidFunction([this,task=std::move(task),progress_acknowledge=std::move(progress_acknowledge)] {
+                _concurrent_task_wrapper(task, progress_acknowledge);
+            }));
+        } else {
+            _append_bound(std::move(task),std::move(progress_acknowledge));
+        }
+    }
+
+    WorkloadAdvancement _advancement;
+    shared_ptr<ProgressIndicator> _progress_indicator;
 
   private:
-
     bool _using_concurrency() const { return ThreadManager::instance().concurrency() > 0; }
 
     void _concurrent_task_wrapper(CompletelyBoundFunctionType const& task, CompletelyBoundFunctionType const& progress_acknowledge) {
@@ -161,11 +165,6 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
         _element_availability_condition.notify_one();
     }
 
-    void _default_progress_acknowledge(E const&, shared_ptr<ProgressIndicator> indicator) {
-        indicator->update_current(static_cast<double>(_advancement.completed()));
-        indicator->update_final(static_cast<double>(_advancement.total()));
-    }
-
     void _print_hold() {
         std::ostringstream logger_stream;
         logger_stream << "[" << _progress_indicator->symbol() << "] " << _progress_indicator->percentage() << "% ";
@@ -176,41 +175,60 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
         Logger::instance().hold(_log_scope_manager->scope(),logger_stream.str());
     }
 
+    std::queue<std::pair<CompletelyBoundFunctionType,CompletelyBoundFunctionType>> _sequential_queue;
+    unsigned int _logger_level;
+    shared_ptr<LogScopeManager> _log_scope_manager;
+    mutable mutex _element_availability_mutex;
+    mutex _process_mutex;
+    mutex _progress_mutex;
+    condition_variable _element_availability_condition;
+    exception_ptr _exception;
+};
+
+//! \brief Base class implementation
+template<class E, class... AS>
+class WorkloadBase : public WorkloadInterface<E,AS...>, protected WorkloadCore {
+  protected:
+    WorkloadBase() : _progress_acknowledge_func(std::bind_front(&WorkloadBase::_default_progress_acknowledge, this)) { }
+  public:
+    using TaskFunctionType = std::function<void(E const &)>;
+    using ProgressAcknowledgeFunctionType = std::function<void(E const &, shared_ptr<ProgressIndicator>)>;
+    using CompletelyBoundFunctionType = std::function<void(void)>;
+
+    void process() override { this->_process(); }
+
+    size_t size() const override { return this->_size(); }
+
+    WorkloadInterface<E,AS...>& append(E const& e) override {
+        auto task = std::bind(std::forward<TaskFunctionType const>(_task_func), std::forward<E const&>(e));
+        auto progress_acknowledge = std::bind(std::forward<ProgressAcknowledgeFunctionType const>(_progress_acknowledge_func),
+                                              std::forward<E const&>(e), this->_progress_indicator);
+        this->_append_bound(std::move(task),std::move(progress_acknowledge));
+        return *this;
+    }
+
+    WorkloadInterface<E,AS...>& append(List<E> const& es) override { for (auto e : es) append(e); return *this; }
+
+  private:
+
+    void _default_progress_acknowledge(E const&, shared_ptr<ProgressIndicator> indicator) {
+        indicator->update_current(static_cast<double>(this->_advancement.completed()));
+        indicator->update_final(static_cast<double>(this->_advancement.total()));
+    }
+
   protected:
 
     void _enqueue(E const& e) {
-        if (_using_concurrency()) {
-            _advancement.add_to_waiting();
-            auto task = std::bind(std::forward<TaskFunctionType const>(_task_func), std::forward<E const&>(e));
-            auto progress_acknowledge = std::bind(std::forward<ProgressAcknowledgeFunctionType const>(_progress_acknowledge_func),
-                                                  std::forward<E const&>(e), _progress_indicator);
-            ThreadManager::instance().enqueue([this,task,progress_acknowledge]{ _concurrent_task_wrapper(task, progress_acknowledge); });
-        } else {
-            append(e);
-        }
+        auto task = std::bind(std::forward<TaskFunctionType const>(_task_func), std::forward<E const&>(e));
+        auto progress_acknowledge = std::bind(std::forward<ProgressAcknowledgeFunctionType const>(_progress_acknowledge_func),
+                                              std::forward<E const&>(e), this->_progress_indicator);
+        this->_enqueue_bound(std::move(task),std::move(progress_acknowledge));
     }
 
   protected:
 
     TaskFunctionType _task_func;
     ProgressAcknowledgeFunctionType _progress_acknowledge_func;
-    WorkloadAdvancement _advancement;
-
-  private:
-
-    // Queue of task-progress_acknowledge pairs for initial consumption and for consumption when using no concurrency
-    std::queue<std::pair<CompletelyBoundFunctionType,CompletelyBoundFunctionType>> _sequential_queue;
-
-    unsigned int _logger_level; // The logger level to impose to the running threads
-    shared_ptr<LogScopeManager> _log_scope_manager; // The scope manager required to properly hold print
-    shared_ptr<ProgressIndicator> _progress_indicator; // The progress indicator to hold print
-
-    mutable mutex _element_availability_mutex;
-    mutex _process_mutex;
-    mutex _progress_mutex;
-    condition_variable _element_availability_condition;
-
-    exception_ptr _exception;
 };
 
 //! \brief A basic static workload where all elements are appended and then processed
