@@ -108,6 +108,7 @@ class TestThread {
         HELPER_TEST_CALL(test_destroy_before_completion())
         HELPER_TEST_CALL(test_task())
         HELPER_TEST_CALL(test_exception())
+        HELPER_TEST_CALL(test_concurrent_activate())
         HELPER_TEST_CALL(test_atomic_multiple_threads())
     }
 
