@@ -141,10 +141,8 @@ class WorkloadCore {
     void _concurrent_task_wrapper(CompletelyBoundFunctionType const& task, CompletelyBoundFunctionType const& progress_acknowledge) {
         _advancement.add_to_processing();
         auto current_logger_level = Logger::instance().current_level();
-        if (_logger_level > current_logger_level)
-            Logger::instance().increase_level(_logger_level-current_logger_level);
-        else if (_logger_level < current_logger_level)
-            Logger::instance().decrease_level(current_logger_level-_logger_level);
+        Logger::instance().decrease_level(current_logger_level);
+        Logger::instance().increase_level(_logger_level);
 
         if (not Logger::instance().is_muted_at(0)) {
             lock_guard<mutex> progress_lock(_progress_mutex);
