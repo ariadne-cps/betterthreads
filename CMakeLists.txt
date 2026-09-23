@@ -3,6 +3,11 @@ cmake_minimum_required(VERSION 3.10)
 project(BetterThreads VERSION 1.0)
 
 option(COVERAGE "Enable coverage reporting" OFF)
+option(THREAD_SANITIZER "Enable ThreadSanitizer" OFF)
+
+if(COVERAGE AND THREAD_SANITIZER)
+    message(FATAL_ERROR "COVERAGE and THREAD_SANITIZER cannot be enabled together.")
+endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
@@ -25,6 +30,14 @@ endif()
 if(COVERAGE AND APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang")
     include(LLVMCodeCoverage)
     append_llvm_coverage_compiler_flags()
+endif()
+
+if(THREAD_SANITIZER)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+        message(FATAL_ERROR "ThreadSanitizer requires GCC or Clang.")
+    endif()
+    add_compile_options(-fsanitize=thread -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=thread)
 endif()
 
 if(WIN32)
