@@ -42,7 +42,6 @@ VoidFunction ThreadPool::_task_wrapper_function(size_t i) {
     return [i, this] {
         while (true) {
             VoidFunction task;
-            bool got_task = false;
             {
                 unique_lock<mutex> lock(_task_availability_mutex);
                 _task_availability_condition.wait(lock, [=, this] {
@@ -54,21 +53,10 @@ VoidFunction ThreadPool::_task_wrapper_function(size_t i) {
                     if (_num_active_threads == _num_threads_to_use) _all_unused_threads_stopped_promise.set_value();
                     return;
                 }
-                if (not _tasks.empty()) {
-                    task = std::move(_tasks.front());
-                    _tasks.pop();
-                    got_task = true;
-                }
+                task = std::move(_tasks.front());
+                _tasks.pop();
             }
-            if (got_task) task();
-            {
-                lock_guard<mutex> lock(_task_availability_mutex);
-                if (i>=_num_threads_to_use) {
-                    _num_active_threads--;
-                    if (_num_active_threads == _num_threads_to_use) _all_unused_threads_stopped_promise.set_value();
-                    return;
-                }
-            }
+            task();
         }
     };
 }
