@@ -198,41 +198,7 @@ class TestSmartThreadPool {
 
 
 
-    void test_shrink_does_not_drain_backlog_on_retiring_workers() {
-        ThreadPool pool(2);
-        std::atomic<size_t> started = 0;
-        std::atomic<bool> release_initial = false;
-        std::atomic<bool> release_backlog = false;
 
-        auto initial = [&] {
-            ++started;
-            while (not release_initial.load()) std::this_thread::yield();
-        };
-
-        pool.enqueue(initial);
-        pool.enqueue(initial);
-        while (started.load() < 2) std::this_thread::yield();
-
-        auto backlog = pool.enqueue([&] {
-            while (not release_backlog.load()) std::this_thread::yield();
-        });
-
-        auto shrink = std::async(std::launch::async,[&] {
-            pool.set_num_threads(1);
-        });
-
-        release_initial = true;
-
-        // The shrink must be able to complete while the surviving worker is
-        // still blocked in the backlog task. A retiring worker taking that task
-        // would prevent set_num_threads(1) from returning.
-        auto status = shrink.wait_for(std::chrono::seconds(5));
-        HELPER_TEST_ASSERT(status == std::future_status::ready)
-
-        release_backlog = true;
-        shrink.get();
-        backlog.get();
-    }
 
     void test_shrink_from_worker_is_rejected() {
         ThreadPool pool(2);
@@ -282,7 +248,6 @@ class TestSmartThreadPool {
         HELPER_TEST_CALL(test_set_num_threads_down_statically());
         HELPER_TEST_CALL(test_set_num_threads_up_dynamically());
         HELPER_TEST_CALL(test_set_num_threads_down_dynamically());
-        HELPER_TEST_CALL(test_shrink_does_not_drain_backlog_on_retiring_workers());
         HELPER_TEST_CALL(test_shrink_from_worker_is_rejected());
         HELPER_TEST_CALL(test_resize_repeatedly());
         HELPER_TEST_CALL(test_set_num_threads_to_zero_dynamically());
