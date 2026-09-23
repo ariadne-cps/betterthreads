@@ -99,6 +99,12 @@ void throw_while_other_task_runs(int const& val, std::shared_ptr<ConcurrentExcep
     throw std::runtime_error("expected");
 }
 
+
+void throw_once_then_accumulate(int const& value, std::shared_ptr<std::atomic<bool>> first, std::shared_ptr<std::atomic<int>> total) {
+    if (first->exchange(false)) throw std::runtime_error("expected");
+    total->operator+=(value);
+}
+
 class TestWorkload {
   public:
 
@@ -255,6 +261,32 @@ class TestWorkload {
         HELPER_TEST_ASSERT(state->slow_finished.load())
     }
 
+
+    void test_reuse_after_serial_exception() {
+        ThreadManager::instance().set_concurrency(0);
+        auto first = std::make_shared<std::atomic<bool>>(true);
+        auto total = std::make_shared<std::atomic<int>>(0);
+        StaticWorkload<int,std::shared_ptr<std::atomic<bool>>,std::shared_ptr<std::atomic<int>>> wl(&throw_once_then_accumulate, first, total);
+        wl.append(1);
+        HELPER_TEST_FAIL(wl.process())
+        wl.append(7);
+        HELPER_TEST_EXECUTE(wl.process())
+        HELPER_TEST_EQUALS(total->load(),7)
+    }
+
+    void test_reuse_after_concurrent_exception() {
+        if (ThreadManager::instance().maximum_concurrency() == 0) return;
+        ThreadManager::instance().set_concurrency(1);
+        auto first = std::make_shared<std::atomic<bool>>(true);
+        auto total = std::make_shared<std::atomic<int>>(0);
+        StaticWorkload<int,std::shared_ptr<std::atomic<bool>>,std::shared_ptr<std::atomic<int>>> wl(&throw_once_then_accumulate, first, total);
+        wl.append(1);
+        HELPER_TEST_FAIL(wl.process())
+        wl.append(9);
+        HELPER_TEST_EXECUTE(wl.process())
+        HELPER_TEST_EQUALS(total->load(),9)
+    }
+
     void test_multiple_append() {
         ThreadManager::instance().set_maximum_concurrency();
         std::shared_ptr<SynchronisedList<int>> result = std::make_shared<SynchronisedList<int>>();
@@ -296,6 +328,10 @@ class TestWorkload {
         HELPER_TEST_CALL(test_throw_serial_exception_later())
         HELPER_TEST_CALL(test_throw_concurrent_exception_immediately())
         HELPER_TEST_CALL(test_throw_concurrent_exception_later())
+        HELPER_TEST_CALL(test_progress_acknowledgement_is_serialised())
+        HELPER_TEST_CALL(test_concurrent_exception_waits_for_running_tasks())
+        HELPER_TEST_CALL(test_reuse_after_serial_exception())
+        HELPER_TEST_CALL(test_reuse_after_concurrent_exception())
         HELPER_TEST_CALL(test_multiple_append())
         HELPER_TEST_CALL(test_multiple_process())
     }

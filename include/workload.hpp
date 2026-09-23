@@ -77,6 +77,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
             });
             if (_exception != nullptr) {
                 auto exception = _exception;
+                _exception = nullptr;
                 _log_scope_manager.reset();
                 rethrow_exception(exception);
             }
@@ -95,7 +96,13 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
                     progress_acknowledge();
                     _print_hold();
                 }
-                task();
+                try {
+                    task();
+                } catch (...) {
+                    _advancement.add_to_completed();
+                    _log_scope_manager.reset();
+                    throw;
+                }
                 _advancement.add_to_completed();
             }
         }
@@ -140,7 +147,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
         } catch (...) {
             {
                 lock_guard<mutex> lock(_element_availability_mutex);
-                _exception = std::current_exception();
+                if (_exception == nullptr) _exception = std::current_exception();
             }
             _element_availability_condition.notify_one();
         }
