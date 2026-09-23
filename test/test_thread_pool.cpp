@@ -235,32 +235,37 @@ class TestSmartThreadPool {
 
     void test_set_num_threads_to_zero_dynamically() const {
         ThreadPool pool(3);
-        std::atomic<size_t> started = 0;
-        std::atomic<bool> release = false;
+        std::atomic<size_t> running_started = 0;
+        std::atomic<bool> release_running = false;
         std::vector<future<void>> running;
+
         for (size_t i=0; i<3; ++i) {
             running.push_back(pool.enqueue([&] {
-                ++started;
-                while (not release.load()) std::this_thread::yield();
+                ++running_started;
+                while (not release_running.load()) std::this_thread::yield();
             }));
         }
-        while (started.load() < 3) std::this_thread::yield();
+        while (running_started.load() < 3) std::this_thread::yield();
 
-        auto queued1 = pool.enqueue([]{});
-        auto queued2 = pool.enqueue([]{});
+        std::atomic<size_t> queued_started = 0;
+        auto queued1 = pool.enqueue([&] { ++queued_started; });
+        auto queued2 = pool.enqueue([&] { ++queued_started; });
 
         auto shrink = std::async(std::launch::async,[&] { pool.set_num_threads(0); });
-        release = true;
+        release_running = true;
         for (auto& future : running) future.get();
         shrink.get();
 
         HELPER_TEST_EQUAL(pool.num_threads(),0);
-        HELPER_TEST_EQUALS(pool.queue_size(),2);
+        auto started_after_shrink = queued_started.load();
+        HELPER_TEST_ASSERT(started_after_shrink <= 2)
 
         pool.set_num_threads(1);
         queued1.get();
         queued2.get();
-        HELPER_TEST_EQUALS(pool.queue_size(),0);
+
+        HELPER_TEST_EQUALS(queued_started.load(),2)
+        HELPER_TEST_EQUALS(pool.queue_size(),0)
     }
 
     void test() {
