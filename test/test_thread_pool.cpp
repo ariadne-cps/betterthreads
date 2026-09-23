@@ -202,29 +202,43 @@ class TestSmartThreadPool {
         ThreadPool pool(2);
         std::atomic<size_t> started = 0;
         std::atomic<bool> release_initial = false;
+        std::atomic<bool> backlog_started = false;
         std::atomic<bool> release_backlog = false;
+
         auto initial = [&] {
             ++started;
             while (not release_initial.load()) std::this_thread::yield();
         };
+
         pool.enqueue(initial);
         pool.enqueue(initial);
         while (started.load() < 2) std::this_thread::yield();
 
-        for (size_t i=0; i<4; ++i)
-            pool.enqueue([&] { while (not release_backlog.load()) std::this_thread::yield(); });
+        for (size_t i=0; i<4; ++i) {
+            pool.enqueue([&] {
+                backlog_started = true;
+                while (not release_backlog.load()) std::this_thread::yield();
+            });
+        }
 
-        std::atomic<bool> shrink_done = false;
+        std::promise<void> shrink_started_promise;
+        auto shrink_started = shrink_started_promise.get_future();
+        std::promise<void> shrink_done_promise;
+        auto shrink_done = shrink_done_promise.get_future();
+
         std::thread shrinker([&] {
+            shrink_started_promise.set_value();
             pool.set_num_threads(1);
-            shrink_done = true;
+            shrink_done_promise.set_value();
         });
 
+        shrink_started.get();
         release_initial = true;
-        for (size_t i=0; i<1000 and not shrink_done.load(); ++i)
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
-        HELPER_TEST_ASSERT(shrink_done.load())
+        while (not backlog_started.load()) std::this_thread::yield();
+
+        HELPER_TEST_ASSERT(shrink_done.wait_for(0ms) == std::future_status::ready)
+
         release_backlog = true;
         shrinker.join();
     }
