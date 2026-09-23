@@ -34,6 +34,7 @@
 #define BETTERTHREADS_THREAD_MANAGER_HPP
 
 #include <algorithm>
+#include <atomic>
 #include "conclog/logging.hpp"
 #include "conclog/thread_registry_interface.hpp"
 #include "thread_pool.hpp"
@@ -96,16 +97,14 @@ class ThreadManager : public ThreadRegistryInterface {
 
   private:
     const size_t _maximum_concurrency;
-    size_t _concurrency;
-    mutable mutex _concurrency_mutex;
+    std::atomic<size_t> _concurrency;
+    mutable mutex _concurrency_change_mutex;
 
     ThreadPool _pool;
 };
 
 template<class F, class... AS> auto ThreadManager::enqueue(F &&f, AS &&... args) -> future<ResultOf<F(AS...)>> {
-    unique_lock<mutex> lock(_concurrency_mutex);
-    if (_concurrency == 0) {
-        lock.unlock();
+    if (_concurrency.load() == 0) {
         using ReturnType = ResultOf<F(AS...)>;
         auto task = packaged_task<ReturnType()>(std::bind(std::forward<F>(f), std::forward<AS>(args)...));
         future<ReturnType> result = task.get_future();
