@@ -78,9 +78,8 @@ class TestSmartThreadPool {
     void test_execute_single() {
         ThreadPool pool(1);
         HELPER_TEST_EQUALS(pool.num_threads(),1);
-        VoidFunction fn([]{ std::this_thread::sleep_for(100ms); });
-        pool.enqueue(fn);
-        std::this_thread::sleep_for(200ms);
+        auto future = pool.enqueue([]{});
+        future.get();
         HELPER_TEST_EQUALS(pool.queue_size(),0);
     }
 
@@ -99,10 +98,10 @@ class TestSmartThreadPool {
         ThreadPool pool(1);
         HELPER_TEST_EQUALS(pool.num_threads(),1);
         HELPER_TEST_EQUALS(pool.queue_size(),0);
-        VoidFunction fn([]{ std::this_thread::sleep_for(100ms); });
-        for (size_t i=0; i<2; ++i) pool.enqueue(fn);
-        HELPER_TEST_ASSERT(pool.queue_size() > 0);
-        std::this_thread::sleep_for(400ms);
+        std::vector<future<void>> futures;
+        for (size_t i=0; i<2; ++i)
+            futures.push_back(pool.enqueue([]{}));
+        for (auto& future : futures) future.get();
         HELPER_TEST_EQUALS(pool.queue_size(),0);
     }
 
@@ -110,18 +109,32 @@ class TestSmartThreadPool {
         size_t num_threads = 2;
         ThreadPool pool(num_threads);
         HELPER_TEST_EQUALS(pool.num_threads(),2);
-        VoidFunction fn([]{ std::this_thread::sleep_for(100ms); });
-        for (size_t i=0; i<2; ++i) pool.enqueue(fn);
-        std::this_thread::sleep_for(std::chrono::milliseconds(400*num_threads));
+        std::atomic<size_t> active = 0;
+        std::atomic<size_t> maximum = 0;
+        std::atomic<bool> release = false;
+        std::vector<future<void>> futures;
+        for (size_t i=0; i<num_threads; ++i) {
+            futures.push_back(pool.enqueue([&] {
+                auto current = ++active;
+                auto observed = maximum.load();
+                while (current > observed and not maximum.compare_exchange_weak(observed,current)) { }
+                while (not release.load()) std::this_thread::yield();
+                --active;
+            }));
+        }
+        while (maximum.load() < num_threads) std::this_thread::yield();
+        release = true;
+        for (auto& future : futures) future.get();
+        HELPER_TEST_EQUALS(maximum.load(),num_threads);
     }
 
     void test_execute_multiple_concurrently_sequentially() {
         size_t num_threads = 2;
         ThreadPool pool(num_threads);
-        VoidFunction fn([]{ std::this_thread::sleep_for(100ms); });
-        for (size_t i=0; i<2*num_threads; ++i) pool.enqueue(fn);
-        HELPER_TEST_ASSERT(pool.queue_size() > 0);
-        std::this_thread::sleep_for(std::chrono::milliseconds(400*num_threads));
+        std::vector<future<void>> futures;
+        for (size_t i=0; i<2*num_threads; ++i)
+            futures.push_back(pool.enqueue([]{}));
+        for (auto& future : futures) future.get();
         HELPER_TEST_EQUALS(pool.queue_size(),0);
     }
 
@@ -129,23 +142,21 @@ class TestSmartThreadPool {
         auto max_concurrency = std::thread::hardware_concurrency();
         ThreadPool pool(max_concurrency);
         std::vector<future<size_t>> results;
-        std::atomic<size_t> x;
+        std::atomic<size_t> x = 0;
 
         for (size_t i = 0; i < 2 * max_concurrency; ++i) {
             results.emplace_back(pool.enqueue([&x] {
-                                     size_t r = ++x;
-                                     return r * r;
-                                 })
-            );
+                size_t r = ++x;
+                return r * r;
+            }));
         }
-        std::this_thread::sleep_for(100ms);
-        HELPER_TEST_EQUALS(x,2*max_concurrency);
 
         size_t actual_sum = 0, expected_sum = 0;
         for (size_t i = 0; i < 2 * max_concurrency; ++i) {
             actual_sum += results[i].get();
             expected_sum += (i+1)*(i+1);
         }
+        HELPER_TEST_EQUALS(x.load(),2*max_concurrency);
         HELPER_TEST_EQUAL(actual_sum,expected_sum);
     }
 
@@ -171,18 +182,19 @@ class TestSmartThreadPool {
 
     void test_set_num_threads_up_dynamically() const {
         ThreadPool pool(0);
-        VoidFunction fn([] { std::this_thread::sleep_for(100ms); });
-        pool.enqueue(fn);
-        std::this_thread::sleep_for(100ms);
+        auto first = pool.enqueue([]{});
         HELPER_TEST_EQUALS(pool.queue_size(),1);
         HELPER_TEST_EXECUTE(pool.set_num_threads(1));
         HELPER_TEST_EQUALS(pool.num_threads(),1);
-        std::this_thread::sleep_for(100ms);
+        first.get();
         HELPER_TEST_EQUALS(pool.queue_size(),0);
-        pool.enqueue(fn);
-        pool.enqueue(fn);
+
+        auto second = pool.enqueue([]{});
+        auto third = pool.enqueue([]{});
         HELPER_TEST_EXECUTE(pool.set_num_threads(3));
         HELPER_TEST_EQUALS(pool.num_threads(),3);
+        second.get();
+        third.get();
     }
 
     void test_set_num_threads_down_dynamically() const {
@@ -223,13 +235,32 @@ class TestSmartThreadPool {
 
     void test_set_num_threads_to_zero_dynamically() const {
         ThreadPool pool(3);
-        VoidFunction fn([] { std::this_thread::sleep_for(100ms); });
-        for (size_t i=0; i<5; ++i)
-            pool.enqueue(fn);
-        HELPER_TEST_EXECUTE(pool.set_num_threads(0));
+        std::atomic<size_t> started = 0;
+        std::atomic<bool> release = false;
+        std::vector<future<void>> running;
+        for (size_t i=0; i<3; ++i) {
+            running.push_back(pool.enqueue([&] {
+                ++started;
+                while (not release.load()) std::this_thread::yield();
+            }));
+        }
+        while (started.load() < 3) std::this_thread::yield();
+
+        auto queued1 = pool.enqueue([]{});
+        auto queued2 = pool.enqueue([]{});
+
+        auto shrink = std::async(std::launch::async,[&] { pool.set_num_threads(0); });
+        release = true;
+        for (auto& future : running) future.get();
+        shrink.get();
+
         HELPER_TEST_EQUAL(pool.num_threads(),0);
-        std::this_thread::sleep_for(100ms);
-        HELPER_TEST_ASSERT(pool.queue_size() > 0);
+        HELPER_TEST_EQUALS(pool.queue_size(),2);
+
+        pool.set_num_threads(1);
+        queued1.get();
+        queued2.get();
+        HELPER_TEST_EQUALS(pool.queue_size(),0);
     }
 
     void test() {
