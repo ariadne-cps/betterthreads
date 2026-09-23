@@ -101,6 +101,7 @@ class TestWorkloadAdvancement {
 
     void test_invalid_transitions() {
         WorkloadAdvancement wp(4);
+        HELPER_TEST_FAIL(wp.add_to_waiting(0));
         HELPER_TEST_FAIL(wp.add_to_processing(5));
         HELPER_TEST_FAIL(wp.add_to_completed());
         wp.add_to_processing(2);
