@@ -49,14 +49,15 @@ VoidFunction ThreadPool::_task_wrapper_function(size_t i) {
                     return _finish_all_and_stop or i>=_num_threads_to_use or not _tasks.empty();
                 });
                 if (_finish_all_and_stop and _tasks.empty()) return;
+                if (i>=_num_threads_to_use) {
+                    _num_active_threads--;
+                    if (_num_active_threads == _num_threads_to_use) _all_unused_threads_stopped_promise.set_value();
+                    return;
+                }
                 if (not _tasks.empty()) {
                     task = std::move(_tasks.front());
                     _tasks.pop();
                     got_task = true;
-                } else if (i>=_num_threads_to_use) {
-                    _num_active_threads--;
-                    if (_num_active_threads == _num_threads_to_use) _all_unused_threads_stopped_promise.set_value();
-                    return;
                 }
             }
             if (got_task) task();
