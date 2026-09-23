@@ -197,6 +197,38 @@ class TestSmartThreadPool {
     }
 
 
+
+    void test_shrink_does_not_drain_backlog_on_retiring_workers() {
+        ThreadPool pool(2);
+        std::atomic<size_t> started = 0;
+        std::atomic<bool> release_initial = false;
+        std::atomic<bool> release_backlog = false;
+        auto initial = [&] {
+            ++started;
+            while (not release_initial.load()) std::this_thread::yield();
+        };
+        pool.enqueue(initial);
+        pool.enqueue(initial);
+        while (started.load() < 2) std::this_thread::yield();
+
+        for (size_t i=0; i<4; ++i)
+            pool.enqueue([&] { while (not release_backlog.load()) std::this_thread::yield(); });
+
+        std::atomic<bool> shrink_done = false;
+        std::thread shrinker([&] {
+            pool.set_num_threads(1);
+            shrink_done = true;
+        });
+
+        release_initial = true;
+        for (size_t i=0; i<1000 and not shrink_done.load(); ++i)
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+        HELPER_TEST_ASSERT(shrink_done.load())
+        release_backlog = true;
+        shrinker.join();
+    }
+
     void test_shrink_from_worker_is_rejected() {
         ThreadPool pool(2);
         auto future = pool.enqueue([&pool] { pool.set_num_threads(0); });
@@ -245,6 +277,9 @@ class TestSmartThreadPool {
         HELPER_TEST_CALL(test_set_num_threads_down_statically());
         HELPER_TEST_CALL(test_set_num_threads_up_dynamically());
         HELPER_TEST_CALL(test_set_num_threads_down_dynamically());
+        HELPER_TEST_CALL(test_shrink_does_not_drain_backlog_on_retiring_workers());
+        HELPER_TEST_CALL(test_shrink_from_worker_is_rejected());
+        HELPER_TEST_CALL(test_resize_repeatedly());
         HELPER_TEST_CALL(test_set_num_threads_to_zero_dynamically());
     }
 };
