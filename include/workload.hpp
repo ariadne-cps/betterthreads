@@ -90,7 +90,11 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
                 ThreadManager::instance().enqueue([this, task, progress_acknowledge] { _concurrent_task_wrapper(task, progress_acknowledge); });
             } else {
                 _advancement.add_to_processing();
-                if (not Logger::instance().is_muted_at(0)) { progress_acknowledge(); _print_hold(); }
+                if (not Logger::instance().is_muted_at(0)) {
+                    lock_guard<mutex> progress_lock(_progress_mutex);
+                    progress_acknowledge();
+                    _print_hold();
+                }
                 task();
                 _advancement.add_to_completed();
             }
@@ -126,7 +130,11 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
         if (_logger_level > Logger::instance().current_level()) Logger::instance().increase_level(_logger_level-Logger::instance().current_level());
         else Logger::instance().decrease_level(Logger::instance().current_level()-_logger_level);
 
-        if (not Logger::instance().is_muted_at(0)) { progress_acknowledge(); _print_hold(); }
+        if (not Logger::instance().is_muted_at(0)) {
+            lock_guard<mutex> progress_lock(_progress_mutex);
+            progress_acknowledge();
+            _print_hold();
+        }
         try {
             task();
         } catch (...) {
@@ -189,6 +197,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
     shared_ptr<ProgressIndicator> _progress_indicator; // The progress indicator to hold print
 
     mutable mutex _element_availability_mutex;
+    mutex _progress_mutex;
     condition_variable _element_availability_condition;
 
     exception_ptr _exception;
