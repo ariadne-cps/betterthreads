@@ -160,7 +160,11 @@ foreach(LANG ${LANGUAGES})
   endif()
 endforeach()
 
-set(COVERAGE_COMPILER_FLAGS "-g -fprofile-arcs -ftest-coverage"
+set(COVERAGE_COMPILER_FLAGS "-g -fprofile-arcs -ftest-coverage")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    string(APPEND COVERAGE_COMPILER_FLAGS " -fprofile-update=atomic")
+endif()
+set(COVERAGE_COMPILER_FLAGS "${COVERAGE_COMPILER_FLAGS}"
     CACHE INTERNAL "")
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
     include(CheckCXXCompilerFlag)
