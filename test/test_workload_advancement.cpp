@@ -71,6 +71,26 @@ class TestWorkloadAdvancement {
         HELPER_TEST_ASSERT(wp.has_finished());
     }
 
+
+    void test_concurrent_transitions() {
+        constexpr size_t count = 128;
+        WorkloadAdvancement wp(count);
+        std::vector<std::thread> threads;
+        threads.reserve(count);
+        for (size_t i=0; i<count; ++i) {
+            threads.emplace_back([&wp] {
+                wp.add_to_processing();
+                wp.add_to_completed();
+            });
+        }
+        for (auto& thread : threads) thread.join();
+        HELPER_TEST_EQUALS(wp.waiting(),0)
+        HELPER_TEST_EQUALS(wp.processing(),0)
+        HELPER_TEST_EQUALS(wp.completed(),count)
+        HELPER_TEST_EQUALS(wp.completion_rate(),1.0)
+        HELPER_TEST_ASSERT(wp.has_finished())
+    }
+
     void test_invalid_transitions() {
         WorkloadAdvancement wp(4);
         HELPER_TEST_FAIL(wp.add_to_processing(5));
@@ -82,6 +102,7 @@ class TestWorkloadAdvancement {
     }
 
     void test() {
+        HELPER_TEST_CALL(test_empty_completion_rate());
         HELPER_TEST_CALL(test_creation());
         HELPER_TEST_CALL(test_advance());
         HELPER_TEST_CALL(test_finished());

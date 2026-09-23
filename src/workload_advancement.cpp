@@ -62,15 +62,15 @@ void WorkloadAdvancement::add_to_waiting(size_t n) {
 }
 
 void WorkloadAdvancement::add_to_processing(size_t n) {
-    HELPER_PRECONDITION(n <= _num_waiting);
     lock_guard<mutex> lock(_mux);
+    HELPER_PRECONDITION(n <= _num_waiting);
     _num_waiting-=n;
     _num_processing+=n;
 }
 
 void WorkloadAdvancement::add_to_completed(size_t n) {
-    HELPER_PRECONDITION(n <=_num_processing);
     lock_guard<mutex> lock(_mux);
+    HELPER_PRECONDITION(n <=_num_processing);
     _num_processing-=n;
     _num_completed+=n;
 }
@@ -78,7 +78,7 @@ void WorkloadAdvancement::add_to_completed(size_t n) {
 double WorkloadAdvancement::completion_rate() const {
     lock_guard<mutex> lock(_mux);
     auto total = static_cast<double>(_num_waiting + _num_processing + _num_completed);
-    return static_cast<double>(_num_completed) / total;
+    return total == 0.0 ? 1.0 : static_cast<double>(_num_completed) / total;
 }
 
 bool WorkloadAdvancement::has_finished() const {
