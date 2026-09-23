@@ -196,6 +196,14 @@ class TestSmartThreadPool {
         HELPER_TEST_EQUALS(pool.queue_size(),0);
     }
 
+
+    void test_shrink_from_worker_is_rejected() {
+        ThreadPool pool(2);
+        auto future = pool.enqueue([&pool] { pool.set_num_threads(0); });
+        HELPER_TEST_FAIL(future.get())
+        HELPER_TEST_EQUALS(pool.num_threads(),2)
+    }
+
     void test_resize_repeatedly() const {
         ThreadPool pool(4);
         std::atomic<size_t> completed = 0;

@@ -97,6 +97,11 @@ size_t ThreadPool::num_threads() const {
 void ThreadPool::set_num_threads(size_t number) {
     lock_guard<mutex> lock(_num_threads_mutex);
     auto old_size = _threads.size();
+    if (number < old_size) {
+        auto caller_id = std::this_thread::get_id();
+        for (auto const& thread : _threads)
+            HELPER_PRECONDITION(thread->id() != caller_id);
+    }
     if (number > old_size) {
         {
             lock_guard<mutex> task_lock(_task_availability_mutex);
