@@ -26,6 +26,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <thread>
+#include <vector>
 #include "helper/test.hpp"
 #include "workload_advancement.hpp"
 
