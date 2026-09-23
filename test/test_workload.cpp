@@ -77,6 +77,12 @@ void throw_exception_later(DynamicWorkloadType::Access& wla, int const& val, std
 }
 
 
+
+struct ProgressConcurrencyState {
+    std::atomic<size_t> active = 0;
+    std::atomic<size_t> maximum = 0;
+};
+
 struct ConcurrentExceptionState {
     std::atomic<bool> slow_started = false;
     std::atomic<bool> slow_finished = false;
@@ -211,6 +217,33 @@ class TestWorkload {
         HELPER_TEST_FAIL(wl.process())
     }
 
+
+
+    void test_progress_acknowledgement_is_serialised() {
+        if (ThreadManager::instance().maximum_concurrency() < 2) return;
+        ThreadManager::instance().set_concurrency(2);
+        Logger::instance().configuration().set_verbosity(2);
+        auto state = std::make_shared<ProgressConcurrencyState>();
+        auto result = std::make_shared<std::atomic<int>>();
+        using WorkloadType = DynamicWorkload<int,std::shared_ptr<std::atomic<int>>>;
+        auto progress = [state](int const&, std::shared_ptr<ProgressIndicator> indicator) {
+            auto active = ++state->active;
+            auto maximum = state->maximum.load();
+            while (active > maximum and not state->maximum.compare_exchange_weak(maximum,active)) { }
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            indicator->update_current(static_cast<double>(active));
+            indicator->update_final(10.0);
+            --state->active;
+        };
+        auto task = [](WorkloadType::Access&, int const& value, std::shared_ptr<std::atomic<int>> total) {
+            total->operator+=(value);
+        };
+        WorkloadType wl(progress,task,result);
+        wl.append({1,2,3,4});
+        wl.process();
+        HELPER_TEST_EQUALS(state->maximum.load(),1)
+        Logger::instance().configuration().set_verbosity(0);
+    }
 
     void test_concurrent_exception_waits_for_running_tasks() {
         if (ThreadManager::instance().maximum_concurrency() < 2) return;
