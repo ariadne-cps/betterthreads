@@ -29,6 +29,7 @@
 #include <thread>
 #include <vector>
 #include <atomic>
+#include <limits>
 #include "helper/test.hpp"
 #include "buffer.hpp"
 
@@ -113,6 +114,8 @@ class TestBuffer {
         constexpr size_t producers = 4;
         constexpr size_t consumers = 4;
         constexpr size_t per_producer = 100;
+        constexpr size_t stop = std::numeric_limits<size_t>::max();
+
         std::atomic<size_t> consumed = 0;
         std::vector<std::thread> producer_threads;
         std::vector<std::thread> consumer_threads;
@@ -120,12 +123,9 @@ class TestBuffer {
         for (size_t i=0; i<consumers; ++i) {
             consumer_threads.emplace_back([&] {
                 while (true) {
-                    try {
-                        buffer.pull();
-                        ++consumed;
-                    } catch (BufferInterruptPullingException&) {
-                        return;
-                    }
+                    auto value = buffer.pull();
+                    if (value == stop) return;
+                    ++consumed;
                 }
             });
         }
@@ -138,8 +138,7 @@ class TestBuffer {
         }
 
         for (auto& thread : producer_threads) thread.join();
-        while (consumed.load() < producers*per_producer) std::this_thread::yield();
-        for (size_t i=0; i<consumers; ++i) buffer.interrupt_consuming();
+        for (size_t i=0; i<consumers; ++i) buffer.push(stop);
         for (auto& thread : consumer_threads) thread.join();
 
         HELPER_TEST_EQUALS(consumed.load(),producers*per_producer)
