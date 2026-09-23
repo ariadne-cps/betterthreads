@@ -8,38 +8,58 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {
+            name: "macOS 26 AppleClang 21 [Coverage]",
+            os: macos-26,
+            cxx: "/usr/bin/clang++"
+          }
+          - {
+            name: "Ubuntu 24.04 GCC 13 [Coverage]",
+            os: ubuntu-24.04,
+            cxx: "g++-13"
+          }
 
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: recursive
 
-    - name: Get Concurrency
+    - name: Get macOS Concurrency
+      if: runner.os == 'macOS'
+      run: echo NPROC="sysctl -n hw.ncpu" >> $GITHUB_ENV
+
+    - name: Get Linux Concurrency
+      if: runner.os == 'Linux'
       run: echo NPROC="nproc" >> $GITHUB_ENV
 
-    - name: Set Up Dependencies
-      run: sudo apt install -y cmake ninja-build pkg-config lcov g++-13
+    - name: Set Up macOS Dependencies
+      if: runner.os == 'macOS'
+      run: brew install ninja pkg-config
+
+    - name: Set Up Linux Dependencies
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build pkg-config lcov g++-13
 
     - name: Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build
 
     - name: Configure CMake
       working-directory: ${{runner.workspace}}/build
-      run: cmake ${{runner.workspace}}/betterthreads -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=g++-13 -G "Ninja" -DCOVERAGE=ON
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=${{matrix.config.cxx}} -G "Ninja" -DCOVERAGE=ON
 
-    - name: Build
+    - name: Build, Test and Generate Code Coverage
       working-directory: ${{runner.workspace}}/build
-      run: cmake --build . --parallel $($NPROC)
+      run: cmake --build . --parallel $($NPROC) --target coverage
 
-    - name: Test
+    - name: Upload Code Coverage
+      if: runner.os == 'Linux'
       working-directory: ${{runner.workspace}}/build
-      run: ctest -j $($NPROC) --output-on-failure
-
-    - name: Generate Code Coverage
-      working-directory: ${{runner.workspace}}/betterthreads
-      run: |
-        lcov --directory ${{runner.workspace}}/build --capture --output-file coverage.info
-        lcov --remove coverage.info '/usr/*' --output-file coverage.info
-        lcov --list coverage.info
-        bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"
+      run: bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"
