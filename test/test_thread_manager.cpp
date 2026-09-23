@@ -66,6 +66,26 @@ class TestThreadManager {
         HELPER_TEST_EQUALS(result,100)
     }
 
+
+    void test_concurrency_read_during_shrink() {
+        if (ThreadManager::instance().maximum_concurrency() < 2) return;
+        ThreadManager::instance().set_concurrency(2);
+        std::atomic<bool> task_started = false;
+        std::atomic<bool> task_finished = false;
+        auto future = ThreadManager::instance().enqueue([&] {
+            task_started = true;
+            std::this_thread::sleep_for(10ms);
+            auto current = ThreadManager::instance().concurrency();
+            task_finished = true;
+            return current;
+        });
+        while (not task_started.load()) std::this_thread::yield();
+        ThreadManager::instance().set_concurrency(1);
+        HELPER_TEST_ASSERT(task_finished.load())
+        HELPER_TEST_EQUALS(future.get(),1)
+        ThreadManager::instance().set_concurrency(0);
+    }
+
     void test_change_concurrency_and_log_scheduler() {
         HELPER_TEST_EXECUTE(ThreadManager::instance().set_concurrency(1))
         HELPER_TEST_FAIL(ThreadManager::instance().set_logging_immediate_scheduler())

@@ -37,7 +37,7 @@ using ConcLog::Logger;
 ThreadManager::ThreadManager() : _maximum_concurrency(std::thread::hardware_concurrency()), _concurrency(0), _pool(0) {}
 
 bool ThreadManager::has_threads_registered() const {
-    return concurrency() > 0;
+    return _pool.num_threads() > 0;
 }
 
 size_t ThreadManager::maximum_concurrency() const {
@@ -45,15 +45,19 @@ size_t ThreadManager::maximum_concurrency() const {
 }
 
 size_t ThreadManager::concurrency() const {
-    lock_guard<mutex> lock(_concurrency_mutex);
-    return _concurrency;
+    return _concurrency.load();
 }
 
 void ThreadManager::set_concurrency(size_t value) {
     HELPER_PRECONDITION(value <= _maximum_concurrency);
-    lock_guard<mutex> lock(_concurrency_mutex);
-    _pool.set_num_threads(value);
-    _concurrency = value;
+    lock_guard<mutex> lock(_concurrency_change_mutex);
+    auto previous = _concurrency.exchange(value);
+    try {
+        _pool.set_num_threads(value);
+    } catch (...) {
+        _concurrency = previous;
+        throw;
+    }
 }
 
 void ThreadManager::set_maximum_concurrency() {
@@ -61,17 +65,20 @@ void ThreadManager::set_maximum_concurrency() {
 }
 
 void ThreadManager::set_logging_immediate_scheduler() const {
-    HELPER_PRECONDITION(concurrency() == 0)
+    lock_guard<mutex> lock(_concurrency_change_mutex);
+    HELPER_PRECONDITION(_concurrency.load() == 0)
     Logger::instance().use_immediate_scheduler();
 }
 
 void ThreadManager::set_logging_blocking_scheduler() const {
-    HELPER_PRECONDITION(concurrency() == 0)
+    lock_guard<mutex> lock(_concurrency_change_mutex);
+    HELPER_PRECONDITION(_concurrency.load() == 0)
     Logger::instance().use_blocking_scheduler();
 }
 
 void ThreadManager::set_logging_nonblocking_scheduler() const {
-    HELPER_PRECONDITION(concurrency() == 0)
+    lock_guard<mutex> lock(_concurrency_change_mutex);
+    HELPER_PRECONDITION(_concurrency.load() == 0)
     Logger::instance().use_nonblocking_scheduler();
 }
 
