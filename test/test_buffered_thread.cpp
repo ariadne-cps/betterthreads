@@ -107,8 +107,8 @@ class TestBufferedThread {
     void test_task_capture() const {
         int a = 0;
         BufferedThread thread;
-        thread.enqueue([&a] { a++; });
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        auto future = thread.enqueue([&a] { a++; });
+        future.get();
         HELPER_TEST_EQUALS(a,1);
     }
 
