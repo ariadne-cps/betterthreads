@@ -80,20 +80,26 @@ template<class E> class Buffer
 
     //! \brief The maximum size for the queue
     size_t capacity() const {
+        lock_guard<mutex> locker(mux);
         return _capacity;
     }
 
     //! \brief Change the capacity
     void set_capacity(size_t capacity) {
         HELPER_PRECONDITION(capacity>0);
-        HELPER_ASSERT_MSG(capacity>=size(),"Reducing capacity below currenty buffer size is not allowed.");
+        lock_guard<mutex> locker(mux);
+        HELPER_ASSERT_MSG(capacity>=_queue.size(),"Reducing capacity below currenty buffer size is not allowed.");
         _capacity = capacity;
+        cond.notify_all();
     }
 
     //! \brief Interrupt consuming in the case that the queue is empty and the buffer in the waiting state for input
     //! \details Needs to
     void interrupt_consuming() {
-        _interrupt = true;
+        {
+            lock_guard<mutex> locker(mux);
+            _interrupt = true;
+        }
         cond.notify_all();
     }
 
@@ -101,7 +107,7 @@ private:
     mutable mutex mux;
     condition_variable cond;
     std::queue<E> _queue;
-    std::atomic<size_t> _capacity;
+    size_t _capacity;
     bool _interrupt;
 };
 

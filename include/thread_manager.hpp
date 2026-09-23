@@ -103,13 +103,16 @@ class ThreadManager : public ThreadRegistryInterface {
 };
 
 template<class F, class... AS> auto ThreadManager::enqueue(F &&f, AS &&... args) -> future<ResultOf<F(AS...)>> {
+    unique_lock<mutex> lock(_concurrency_mutex);
     if (_concurrency == 0) {
+        lock.unlock();
         using ReturnType = ResultOf<F(AS...)>;
         auto task = packaged_task<ReturnType()>(std::bind(std::forward<F>(f), std::forward<AS>(args)...));
         future<ReturnType> result = task.get_future();
         task();
         return result;
-    } else return _pool.enqueue(f,args...);
+    }
+    return _pool.enqueue(std::forward<F>(f),std::forward<AS>(args)...);
 }
 
 } // namespace BetterThreads

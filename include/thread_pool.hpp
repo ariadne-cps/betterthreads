@@ -97,7 +97,6 @@ class ThreadPool {
     bool _finish_all_and_stop; // Wait till the queue is empty before stopping the thread, used for destruction
     size_t _num_active_threads; // Down-counter for checking whether all the threads to stop have been stopped
     size_t _num_threads_to_use; // Reference on the number of threads to use: if lower than the threads size, the last threads will stop
-    mutable mutex _num_active_threads_mutex;
     mutable mutex _num_threads_mutex;
     promise<void> _all_unused_threads_stopped_promise;
     future<void> _all_unused_threads_stopped_future;

@@ -78,6 +78,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
             CompletelyBoundFunctionType task, progress_acknowledge;
             make_lpair(task,progress_acknowledge) = _sequential_queue.front();
             _sequential_queue.pop();
+            lock.unlock();
             if (_using_concurrency()) {
                 ThreadManager::instance().enqueue([this, task, progress_acknowledge] { _concurrent_task_wrapper(task, progress_acknowledge); });
             } else {
@@ -89,14 +90,21 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
         }
     }
 
-    size_t size() const override { return _sequential_queue.size(); }
+    size_t size() const override {
+        lock_guard<mutex> lock(_element_availability_mutex);
+        return _sequential_queue.size();
+    }
 
     WorkloadInterface<E,AS...>& append(E const& e) override {
-        _advancement.add_to_waiting();
-        _sequential_queue.push(std::make_pair(std::bind(std::forward<TaskFunctionType const>(_task_func), std::forward<E const&>(e)),
-                                                   std::bind(std::forward<ProgressAcknowledgeFunctionType const>(_progress_acknowledge_func), std::forward<E const&>(e),
-                                                  _progress_indicator)
-                         ));
+        {
+            lock_guard<mutex> lock(_element_availability_mutex);
+            _advancement.add_to_waiting();
+            _sequential_queue.push(std::make_pair(std::bind(std::forward<TaskFunctionType const>(_task_func), std::forward<E const&>(e)),
+                                                       std::bind(std::forward<ProgressAcknowledgeFunctionType const>(_progress_acknowledge_func), std::forward<E const&>(e),
+                                                      _progress_indicator)
+                             ));
+        }
+        _element_availability_condition.notify_one();
         return *this;
     }
 
@@ -154,12 +162,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
                                                   std::forward<E const&>(e), _progress_indicator);
             ThreadManager::instance().enqueue([this,task,progress_acknowledge]{ _concurrent_task_wrapper(task, progress_acknowledge); });
         } else {
-            // Locking and notification are used when concurrency is set to zero during processing, in order to avoid a race and to resume processing _sequential_queue respectively
-            {
-                lock_guard<mutex> lock(_element_appending_mutex);
-                append(e);
-            }
-            _element_availability_condition.notify_one();
+            append(e);
         }
     }
 
@@ -178,8 +181,7 @@ class WorkloadBase : public WorkloadInterface<E,AS...> {
     shared_ptr<LogScopeManager> _log_scope_manager; // The scope manager required to properly hold print
     shared_ptr<ProgressIndicator> _progress_indicator; // The progress indicator to hold print
 
-    mutex _element_appending_mutex;
-    mutex _element_availability_mutex;
+    mutable mutex _element_availability_mutex;
     condition_variable _element_availability_condition;
 
     exception_ptr _exception;

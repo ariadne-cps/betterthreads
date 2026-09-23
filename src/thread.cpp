@@ -44,7 +44,10 @@ Thread::Thread(VoidFunction task, String name, bool active)
         _ready_for_task_future.get();
         if (_active) {
             try { task(); }
-            catch(...) { _exception = std::current_exception(); }
+            catch(...) {
+                lock_guard<mutex> lock(_exception_mutex);
+                _exception = std::current_exception();
+            }
         }
     });
     _got_id_future.get();
@@ -74,7 +77,8 @@ void Thread::activate()  {
     }
 }
 
-exception_ptr const& Thread::exception() const {
+exception_ptr Thread::exception() const {
+    lock_guard<mutex> lock(_exception_mutex);
     return _exception;
 }
 

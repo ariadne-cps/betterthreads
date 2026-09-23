@@ -75,7 +75,7 @@ class Thread {
     void activate();
 
     //! \brief The exception, if it exists
-    exception_ptr const& exception() const;
+    exception_ptr exception() const;
 
     //! \brief Destroy the instance
     ~Thread();
@@ -90,6 +90,7 @@ class Thread {
     promise<void> _ready_for_task_promise;
     future<void> _ready_for_task_future;
     exception_ptr _exception;
+    mutable mutex _exception_mutex;
 };
 
 } // namespace BetterThreads
