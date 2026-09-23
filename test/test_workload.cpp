@@ -219,7 +219,7 @@ class TestWorkload {
         StaticWorkload<int,std::shared_ptr<ConcurrentExceptionState>> wl(&throw_while_other_task_runs, state);
         wl.append({1,0});
         HELPER_TEST_FAIL(wl.process())
-        HELPER_TEST_ASSERT(state->slow_finished)
+        HELPER_TEST_ASSERT(state->slow_finished.load())
     }
 
     void test_multiple_append() {
