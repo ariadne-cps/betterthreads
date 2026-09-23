@@ -83,10 +83,10 @@ exception_ptr Thread::exception() const {
 }
 
 Thread::~Thread() {
-    if (not _active) _ready_for_task_promise.set_value();
-    else Logger::instance().unregister_thread(_id);
+    auto active = _active.load();
+    if (not active) _ready_for_task_promise.set_value();
     _thread.join();
-
+    if (active) Logger::instance().unregister_thread(_id);
 }
 
 } // namespace BetterThreads
