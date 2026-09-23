@@ -240,19 +240,20 @@ class TestWorkload {
 
     void test_concurrent_logger_level_increase() {
         if (ThreadManager::instance().maximum_concurrency() == 0) return;
-        ThreadManager::instance().set_concurrency(1);
 
+        ThreadManager::instance().set_concurrency(0);
         Logger::instance().configuration().set_verbosity(0);
+        ThreadManager::instance().set_concurrency(1);
         Logger::instance().increase_level(1);
 
         auto result = std::make_shared<std::atomic<int>>(0);
         StaticWorkloadType workload(&sum_all,result);
         workload.append(1);
-
-        Logger::instance().decrease_level(1);
         workload.process();
 
+        Logger::instance().decrease_level(1);
         HELPER_TEST_EQUALS(result->load(),1)
+        ThreadManager::instance().set_concurrency(0);
     }
 
     void test_concurrent_process_is_rejected() {

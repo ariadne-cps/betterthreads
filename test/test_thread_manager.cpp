@@ -48,21 +48,21 @@ class TestThreadManager {
     void test_run_task_with_one_thread() {
         ThreadManager::instance().set_concurrency(1);
         int a = 10;
-        auto result = ThreadManager::instance().enqueue([&a]{ return a * a; }).get();
+        auto result = ThreadManager::instance().enqueue(std::function<int()>([&a]{ return a * a; })).get();
         HELPER_TEST_EQUALS(result,100)
     }
 
     void test_run_task_with_multiple_threads() {
         ThreadManager::instance().set_concurrency(ThreadManager::instance().maximum_concurrency());
         int a = 10;
-        auto result = ThreadManager::instance().enqueue([&a]{ return a * a; }).get();
+        auto result = ThreadManager::instance().enqueue(std::function<int()>([&a]{ return a * a; })).get();
         HELPER_TEST_EQUALS(result,100)
     }
 
     void test_run_task_with_no_threads() {
         ThreadManager::instance().set_concurrency(0);
         int a = 10;
-        auto result = ThreadManager::instance().enqueue([&a]{ return a * a; }).get();
+        auto result = ThreadManager::instance().enqueue(std::function<int()>([&a]{ return a * a; })).get();
         HELPER_TEST_EQUALS(result,100)
     }
 
