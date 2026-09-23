@@ -36,6 +36,12 @@ using namespace BetterThreads;
 class TestWorkloadAdvancement {
   public:
 
+    void test_empty_completion_rate() {
+        WorkloadAdvancement wp;
+        HELPER_TEST_EQUALS(wp.completion_rate(),1.0)
+        HELPER_TEST_ASSERT(wp.has_finished())
+    }
+
     void test_creation() {
         WorkloadAdvancement wp(5);
         HELPER_TEST_EQUALS(wp.completion_rate(),0.0)
@@ -108,6 +114,7 @@ class TestWorkloadAdvancement {
         HELPER_TEST_CALL(test_creation());
         HELPER_TEST_CALL(test_advance());
         HELPER_TEST_CALL(test_finished());
+        HELPER_TEST_CALL(test_concurrent_transitions());
         HELPER_TEST_CALL(test_invalid_transitions());
     }
 
