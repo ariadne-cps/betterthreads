@@ -90,7 +90,7 @@ class Thread {
     promise<void> _ready_for_task_promise;
     future<void> _ready_for_task_future;
     exception_ptr _exception;
-    mutable mutex _exception_mutex;
+    mutable std::mutex _exception_mutex;
 };
 
 } // namespace BetterThreads
