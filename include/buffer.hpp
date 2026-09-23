@@ -55,20 +55,22 @@ template<class E> class Buffer
     //! \details Will block if the capacity has been reached
     void push(E const& e) {
         unique_lock<mutex> locker(mux);
-        cond.wait(locker, [this](){return _queue.size() < _capacity;});
+        _not_full.wait(locker, [this](){return _queue.size() < _capacity;});
         _queue.push(e);
-        cond.notify_all();
+        locker.unlock();
+        _not_empty.notify_one();
     }
 
     //! \brief Pulls an object from the buffer
     //! \details Will block if the capacity is zero
     E pull() {
         unique_lock<mutex> locker(mux);
-        cond.wait(locker, [this](){return not _queue.empty() || _interrupt;});
+        _not_empty.wait(locker, [this](){return not _queue.empty() || _interrupt;});
         if (_interrupt and _queue.empty()) { _interrupt = false; throw BufferInterruptPullingException(); }
         E back = _queue.front();
         _queue.pop();
-        cond.notify_all();
+        locker.unlock();
+        _not_full.notify_one();
         return back;
     }
 
@@ -90,7 +92,7 @@ template<class E> class Buffer
         lock_guard<mutex> locker(mux);
         HELPER_ASSERT_MSG(capacity>=_queue.size(),"Reducing capacity below currenty buffer size is not allowed.");
         _capacity = capacity;
-        cond.notify_all();
+        _not_full.notify_all();
     }
 
     //! \brief Interrupt consuming in the case that the queue is empty and the buffer in the waiting state for input
@@ -100,12 +102,13 @@ template<class E> class Buffer
             lock_guard<mutex> locker(mux);
             _interrupt = true;
         }
-        cond.notify_all();
+        _not_empty.notify_all();
     }
 
 private:
     mutable mutex mux;
-    condition_variable cond;
+    condition_variable _not_empty;
+    condition_variable _not_full;
     std::queue<E> _queue;
     size_t _capacity;
     bool _interrupt;

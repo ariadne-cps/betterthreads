@@ -27,6 +27,8 @@
  */
 
 #include <thread>
+#include <vector>
+#include <atomic>
 #include "helper/test.hpp"
 #include "buffer.hpp"
 
@@ -105,6 +107,45 @@ class TestBuffer {
         thread.join();
     }
 
+
+    void test_multiple_producers_consumers() {
+        Buffer<size_t> buffer(4);
+        constexpr size_t producers = 4;
+        constexpr size_t consumers = 4;
+        constexpr size_t per_producer = 100;
+        std::atomic<size_t> consumed = 0;
+        std::vector<std::thread> producer_threads;
+        std::vector<std::thread> consumer_threads;
+
+        for (size_t i=0; i<consumers; ++i) {
+            consumer_threads.emplace_back([&] {
+                while (true) {
+                    try {
+                        buffer.pull();
+                        ++consumed;
+                    } catch (BufferInterruptPullingException&) {
+                        return;
+                    }
+                }
+            });
+        }
+
+        for (size_t i=0; i<producers; ++i) {
+            producer_threads.emplace_back([&,i] {
+                for (size_t j=0; j<per_producer; ++j)
+                    buffer.push(i*per_producer+j);
+            });
+        }
+
+        for (auto& thread : producer_threads) thread.join();
+        while (consumed.load() < producers*per_producer) std::this_thread::yield();
+        for (size_t i=0; i<consumers; ++i) buffer.interrupt_consuming();
+        for (auto& thread : consumer_threads) thread.join();
+
+        HELPER_TEST_EQUALS(consumed.load(),producers*per_producer)
+        HELPER_TEST_EQUALS(buffer.size(),0)
+    }
+
     void test() {
         HELPER_TEST_CALL(test_construct());
         HELPER_TEST_CALL(test_construct_invalid());
@@ -112,6 +153,7 @@ class TestBuffer {
         HELPER_TEST_CALL(test_set_capacity_when_filled());
         HELPER_TEST_CALL(test_single_buffer());
         HELPER_TEST_CALL(test_io_buffer());
+        HELPER_TEST_CALL(test_multiple_producers_consumers());
     }
 };
 
