@@ -131,14 +131,9 @@ class TestWorkload {
   public:
 
     void test_construct_static() {
-        HELPER_TEST_PRINT("before ThreadManager::instance()")
-        auto& manager = ThreadManager::instance();
-        HELPER_TEST_PRINT("before set_concurrency(0)")
-        manager.set_concurrency(0);
-        HELPER_TEST_PRINT("before StaticWorkload construction")
+        ThreadManager::instance().set_concurrency(0);
         auto result = std::make_shared<std::atomic<int>>();
         StaticWorkloadType wl(&sum_all, result);
-        HELPER_TEST_PRINT("after StaticWorkload construction")
     }
 
     void test_construct_dynamic() {
