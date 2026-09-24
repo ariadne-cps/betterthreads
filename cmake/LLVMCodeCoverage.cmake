@@ -65,8 +65,10 @@ function(setup_target_for_coverage_llvm)
 
     set(PROFILE_DIR "${PROJECT_BINARY_DIR}/coverage/profiles")
     set(PROFDATA_FILE "${PROJECT_BINARY_DIR}/coverage/coverage.profdata")
+    set(LCOV_FILE "${PROJECT_BINARY_DIR}/coverage.info")
     set(HTML_DIR "${PROJECT_BINARY_DIR}/coverage/html")
     set(MERGE_SCRIPT "${PROJECT_BINARY_DIR}/merge-llvm-coverage.cmake")
+    set(EXPORT_SCRIPT "${PROJECT_BINARY_DIR}/export-llvm-coverage.cmake")
 
     file(WRITE "${MERGE_SCRIPT}"
 "file(GLOB LLVM_RAW_PROFILES \"${PROFILE_DIR}/*.profraw\")
@@ -87,6 +89,23 @@ endif()
         list(APPEND LLVM_COV_FILTER_ARGS "-ignore-filename-regex=${Coverage_EXCLUDE_REGEX}")
     endif()
 
+    file(GENERATE OUTPUT "${EXPORT_SCRIPT}" CONTENT
+"execute_process(
+    COMMAND \"${LLVM_COV_EXECUTABLE}\" export
+            \"$<TARGET_FILE:${Coverage_TARGET}>\"
+            ${LLVM_COV_OBJECT_ARGS}
+            \"-instr-profile=${PROFDATA_FILE}\"
+            \"-format=lcov\"
+            ${LLVM_COV_FILTER_ARGS}
+            ${Coverage_SOURCES}
+    OUTPUT_FILE \"${LCOV_FILE}\"
+    RESULT_VARIABLE LLVM_COV_EXPORT_RESULT
+)
+if(NOT LLVM_COV_EXPORT_RESULT EQUAL 0)
+    message(FATAL_ERROR \"llvm-cov export failed.\")
+endif()
+")
+
     add_custom_target(${Coverage_NAME}
         COMMAND "${CMAKE_COMMAND}" -E rm -rf "${PROJECT_BINARY_DIR}/coverage"
         COMMAND "${CMAKE_COMMAND}" -E make_directory "${PROFILE_DIR}"
@@ -100,6 +119,7 @@ endif()
                 "-instr-profile=${PROFDATA_FILE}"
                 ${LLVM_COV_FILTER_ARGS}
                 ${Coverage_SOURCES}
+        COMMAND "${CMAKE_COMMAND}" -P "${EXPORT_SCRIPT}"
         COMMAND "${CMAKE_COMMAND}" -E make_directory "${HTML_DIR}"
         COMMAND "${LLVM_COV_EXECUTABLE}" show
                 "$<TARGET_FILE:${Coverage_TARGET}>"
@@ -116,6 +136,8 @@ endif()
     )
 
     add_custom_command(TARGET ${Coverage_NAME} POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E echo
+                "LLVM coverage LCOV report: ${LCOV_FILE}"
         COMMAND "${CMAKE_COMMAND}" -E echo
                 "LLVM coverage HTML report: ${HTML_DIR}/index.html"
     )
