@@ -132,37 +132,39 @@ if(NOT TARGET betterthreads)
 
     add_library(betterthreads ${LIBRARY_KIND} $<TARGET_OBJECTS:BETTERTHREADS_SRC>)
 
-    if(NOT TARGET tests)
-        enable_testing()
-        add_subdirectory(test)
-    endif()
-
     add_subdirectory(submodules)
     target_link_libraries(betterthreads conclog helper ${CMAKE_THREAD_LIBS_INIT})
 
-    if(COVERAGE)
-        if(APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang")
-            setup_target_for_coverage_llvm(
-                NAME coverage
-                TARGET betterthreads
-                OBJECTS
-                    test_buffer
-                    test_buffered_thread
-                    test_thread
-                    test_thread_pool
-                    test_thread_manager
-                    test_workload_advancement
-                    test_workload
-                DEPENDENCIES tests
-                SOURCES
-                    "${PROJECT_SOURCE_DIR}/include"
-                    "${PROJECT_SOURCE_DIR}/src"
-            )
-        else()
-            setup_target_for_coverage_gcc(
-                NAME coverage
-                DEPENDENCIES tests
-            )
+    if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+        if(NOT TARGET tests)
+            enable_testing()
+            add_subdirectory(test)
+        endif()
+
+        if(COVERAGE)
+            if(APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang")
+                get_property(
+                    BETTERTHREADS_TEST_TARGETS
+                    TARGET tests
+                    PROPERTY MANUALLY_ADDED_DEPENDENCIES
+                )
+
+                setup_target_for_coverage_llvm(
+                    NAME coverage
+                    TARGET betterthreads
+                    OBJECTS
+                        ${BETTERTHREADS_TEST_TARGETS}
+                    DEPENDENCIES tests
+                    SOURCES
+                        "${PROJECT_SOURCE_DIR}/include"
+                        "${PROJECT_SOURCE_DIR}/src"
+                )
+            else()
+                setup_target_for_coverage_gcc(
+                    NAME coverage
+                    DEPENDENCIES tests
+                )
+            endif()
         endif()
     endif()
 endif()
