@@ -80,7 +80,9 @@ ThreadPool::ThreadPool(size_t size, String name)
         : _name(name), _finish_all_and_stop(false), _num_active_threads(size), _num_threads_to_use(size),
           _all_unused_threads_stopped_future(_all_unused_threads_stopped_promise.get_future())
 {
+    std::cerr << "ThreadPool ctor: this=" << this << " threads=" << _threads.size() << std::endl;
     _append_thread_range(0,size);
+    std::cerr << "ThreadPool ctor done: this=" << this << " threads=" << _threads.size() << std::endl;
 }
 
 String ThreadPool::name() const {
@@ -93,7 +95,7 @@ size_t ThreadPool::num_threads() const {
 }
 
 void ThreadPool::set_num_threads(size_t number) {
-    std::cerr << "set_num_threads: entry number=" << number << std::endl;
+    std::cerr << "set_num_threads: this=" << this << " entry number=" << number << std::endl;
     lock_guard<mutex> lock(_num_threads_mutex);
     std::cerr << "set_num_threads: locked" << std::endl;
     auto old_size = _threads.size();
