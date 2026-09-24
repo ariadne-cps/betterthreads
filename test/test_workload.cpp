@@ -296,11 +296,10 @@ class TestWorkload {
         auto state = std::make_shared<ProcessConcurrencyState>();
         StaticWorkload<int,std::shared_ptr<ProcessConcurrencyState>> wl(&block_until_released,state);
         wl.append(1);
-        std::thread processor([&wl] { wl.process(); });
+        Thread processor([&wl] { wl.process(); },"processor");
         while (not state->started.load()) std::this_thread::yield();
         HELPER_TEST_FAIL(wl.process())
         state->release = true;
-        processor.join();
     }
 
     void test_progress_acknowledgement_is_serialised() {
