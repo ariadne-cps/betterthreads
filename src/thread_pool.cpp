@@ -93,8 +93,13 @@ size_t ThreadPool::num_threads() const {
 }
 
 void ThreadPool::set_num_threads(size_t number) {
+    std::cerr << "set_num_threads: entry number=" << number << std::endl;
     lock_guard<mutex> lock(_num_threads_mutex);
+    std::cerr << "set_num_threads: locked" << std::endl;
     auto old_size = _threads.size();
+    std::cerr << "set_num_threads: old_size=" << old_size
+              << " active=" << _num_active_threads
+              << " to_use=" << _num_threads_to_use << std::endl;
     if (number < old_size) {
         auto caller_id = std::this_thread::get_id();
         for (auto const& thread : _threads)
@@ -118,6 +123,7 @@ void ThreadPool::set_num_threads(size_t number) {
         _all_unused_threads_stopped_promise = promise<void>();
         _all_unused_threads_stopped_future = _all_unused_threads_stopped_promise.get_future();
     }
+    std::cerr << "set_num_threads: exit" << std::endl;
 }
 
 size_t ThreadPool::queue_size() const {
