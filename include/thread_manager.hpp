@@ -62,9 +62,11 @@ class ThreadManager : public ThreadRegistryInterface {
         std::cerr << "ThreadManager::instance before attach: this=" << &instance
                   << " sizeof=" << sizeof(ThreadManager) << std::endl;
         if (not logger.has_thread_registry_attached()) {
+            std::cerr << "ThreadManager::instance pool before attach=" << instance._pool.num_threads() << std::endl;
             std::cerr << "ThreadManager::instance attaching registry" << std::endl;
             logger.attach_thread_registry(&instance);
             std::cerr << "ThreadManager::instance attached registry" << std::endl;
+            std::cerr << "ThreadManager::instance pool after attach=" << instance._pool.num_threads() << std::endl;
         }
         std::cerr << "ThreadManager::instance return: this=" << &instance << std::endl;
         return instance;
