@@ -3,6 +3,18 @@ include(CMakeParseArguments)
 find_program(LCOV_EXECUTABLE NAMES lcov REQUIRED)
 find_program(GENHTML_EXECUTABLE NAMES genhtml REQUIRED)
 
+set(GCC_COVERAGE_COMPILE_FLAGS "--coverage")
+set(GCC_COVERAGE_LINK_FLAGS "--coverage")
+
+function(append_gcc_coverage_compiler_flags)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}" PARENT_SCOPE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}" PARENT_SCOPE)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}" PARENT_SCOPE)
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}" PARENT_SCOPE)
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}" PARENT_SCOPE)
+    message(STATUS "Appending GCC code coverage compiler flags: ${GCC_COVERAGE_COMPILE_FLAGS}")
+endfunction()
+
 function(setup_target_for_coverage_gcc)
     set(options NONE)
     set(oneValueArgs NAME)

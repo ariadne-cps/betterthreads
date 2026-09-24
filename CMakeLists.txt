@@ -9,7 +9,19 @@ if(COVERAGE AND THREAD_SANITIZER)
     message(FATAL_ERROR "COVERAGE and THREAD_SANITIZER cannot be enabled together.")
 endif()
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+if(COVERAGE)
+    if(APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang")
+        include(LLVMCodeCoverage)
+        append_llvm_coverage_compiler_flags()
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+        include(GCCCodeCoverage)
+        append_gcc_coverage_compiler_flags()
+    else()
+        message(FATAL_ERROR "Coverage is supported only with GCC or macOS AppleClang/Clang.")
+    endif()
+endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.20)
@@ -27,10 +39,6 @@ else()
     message(WARNING "You are using an unsupported compiler! MSVC, GCC and Clang are supported.")
 endif()
 
-if(COVERAGE AND APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang")
-    include(LLVMCodeCoverage)
-    append_llvm_coverage_compiler_flags()
-endif()
 
 if(THREAD_SANITIZER)
     if(NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
@@ -125,11 +133,6 @@ if(NOT TARGET betterthreads)
     add_library(betterthreads ${LIBRARY_KIND} $<TARGET_OBJECTS:BETTERTHREADS_SRC>)
 
     if(NOT TARGET tests)
-        if(COVERAGE AND NOT (APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang"))
-            include(CodeCoverage)
-            append_coverage_compiler_flags()
-        endif()
-
         enable_testing()
         add_subdirectory(test)
     endif()
@@ -156,7 +159,6 @@ if(NOT TARGET betterthreads)
                     "${PROJECT_SOURCE_DIR}/src"
             )
         else()
-            include(GCCCodeCoverage)
             setup_target_for_coverage_gcc(
                 NAME coverage
                 DEPENDENCIES tests
