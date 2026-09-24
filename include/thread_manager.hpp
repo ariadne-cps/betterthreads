@@ -58,6 +58,8 @@ class ThreadManager : public ThreadRegistryInterface {
     //! \brief The singleton instance of this class
     static ThreadManager& instance() {
         auto& logger = Logger::instance();
+        std::cerr << "ThreadManager header Logger: this=" << &logger
+                  << " sizeof=" << sizeof(Logger) << std::endl;
         static ThreadManager instance;
         std::cerr << "ThreadManager::instance before attach: this=" << &instance
                   << " sizeof=" << sizeof(ThreadManager) << std::endl;
