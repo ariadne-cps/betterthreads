@@ -89,10 +89,8 @@ class TestThread {
     void test_concurrent_activate() const {
         std::atomic<size_t> executions = 0;
         Thread thread([&executions] { ++executions; },"inactive",false);
-        std::thread first([&thread] { thread.activate(); });
-        std::thread second([&thread] { thread.activate(); });
-        first.join();
-        second.join();
+        Thread first([&thread] { thread.activate(); },"activator1");
+        Thread second([&thread] { thread.activate(); },"activator2");
         std::this_thread::sleep_for(10ms);
         HELPER_TEST_EQUALS(executions,1)
     }
