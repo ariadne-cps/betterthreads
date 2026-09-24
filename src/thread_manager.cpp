@@ -49,11 +49,16 @@ size_t ThreadManager::concurrency() const {
 }
 
 void ThreadManager::set_concurrency(size_t value) {
+    std::cerr << "set_concurrency: precondition" << std::endl;
     HELPER_PRECONDITION(value <= _maximum_concurrency);
+    std::cerr << "set_concurrency: locking" << std::endl;
     lock_guard<mutex> lock(_concurrency_change_mutex);
+    std::cerr << "set_concurrency: exchange" << std::endl;
     auto previous = _concurrency.exchange(value);
+    std::cerr << "set_concurrency: pool resize" << std::endl;
     try {
         _pool.set_num_threads(value);
+        std::cerr << "set_concurrency: pool resize done" << std::endl;
     } catch (...) {
         _concurrency = previous;
         throw;
