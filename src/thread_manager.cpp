@@ -34,7 +34,9 @@ namespace BetterThreads {
 
 using ConcLog::Logger;
 
-ThreadManager::ThreadManager() : _maximum_concurrency(std::thread::hardware_concurrency()), _concurrency(0), _pool(0) {}
+ThreadManager::ThreadManager() : _maximum_concurrency(std::thread::hardware_concurrency()), _concurrency(0), _pool(0) {
+    std::cerr << "ThreadManager ctor: this=" << this << " sizeof=" << sizeof(ThreadManager) << std::endl;
+}
 
 bool ThreadManager::has_threads_registered() const {
     return _pool.num_threads() > 0;
