@@ -35,8 +35,8 @@
 #include <mutex>
 #include <atomic>
 #include <functional>
-#include "macros.hpp"
-#include "string.hpp"
+#include "helper/macros.hpp"
+#include "helper/string.hpp"
 
 namespace Threading {
 

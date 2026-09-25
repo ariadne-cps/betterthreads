@@ -22,7 +22,7 @@
  *  along with Threading.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "test.hpp"
+#include "helper/test.hpp"
 #include "logging/logging.hpp"
 #include "logging/thread_registry_interface.hpp"
 #include "threading/thread_pool.hpp"

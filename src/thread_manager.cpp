@@ -22,7 +22,7 @@
  *  along with Threading.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "macros.hpp"
+#include "helper/macros.hpp"
 #include "logging/logging.hpp"
 #include "threading/thread_manager.hpp"
 

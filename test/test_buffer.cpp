@@ -26,7 +26,7 @@
 #include <vector>
 #include <atomic>
 #include <limits>
-#include "test.hpp"
+#include "helper/test.hpp"
 #include "threading/buffer.hpp"
 
 using namespace Threading;

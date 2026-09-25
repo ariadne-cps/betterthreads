@@ -23,8 +23,8 @@
  */
 
 #include <functional>
-#include "test.hpp"
-#include "container.hpp"
+#include "helper/test.hpp"
+#include "helper/container.hpp"
 #include "threading/workload.hpp"
 
 using namespace Threading;

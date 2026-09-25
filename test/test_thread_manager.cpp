@@ -23,7 +23,7 @@
  */
 
 #include <thread>
-#include "test.hpp"
+#include "helper/test.hpp"
 #include "threading/thread_manager.hpp"
 
 using namespace Threading;

@@ -22,8 +22,8 @@
  *  along with Threading.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "test.hpp"
-#include "container.hpp"
+#include "helper/test.hpp"
+#include "helper/container.hpp"
 #include "logging/logging.hpp"
 #include "logging/thread_registry_interface.hpp"
 #include "threading/thread.hpp"

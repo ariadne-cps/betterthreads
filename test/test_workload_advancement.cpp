@@ -24,7 +24,7 @@
 
 #include <thread>
 #include <vector>
-#include "test.hpp"
+#include "helper/test.hpp"
 #include "threading/workload_advancement.hpp"
 
 using namespace Threading;

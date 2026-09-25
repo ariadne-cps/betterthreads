@@ -35,7 +35,7 @@
 #include <mutex>
 #include <atomic>
 #include <functional>
-#include "string.hpp"
+#include "helper/string.hpp"
 #include "threading/templates.hpp"
 #include "threading/buffer.hpp"
 #include "threading/using.hpp"

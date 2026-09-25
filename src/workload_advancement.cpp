@@ -22,7 +22,7 @@
  *  along with Threading.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "macros.hpp"
+#include "helper/macros.hpp"
 #include "threading/workload_advancement.hpp"
 
 namespace Threading {
