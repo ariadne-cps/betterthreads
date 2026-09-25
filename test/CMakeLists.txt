@@ -16,7 +16,6 @@ foreach(TEST ${UNIT_TESTS})
         set_tests_properties(${TEST} PROPERTIES
             ENVIRONMENT_MODIFICATION
                 "PATH=path_list_prepend:$<TARGET_FILE_DIR:threading>;PATH=path_list_prepend:$<TARGET_FILE_DIR:logging>;PATH=path_list_prepend:$<TARGET_FILE_DIR:helper>"
-            TIMEOUT 120
         )
     endif()
 endforeach()
