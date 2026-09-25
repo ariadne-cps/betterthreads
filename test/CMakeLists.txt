@@ -15,7 +15,9 @@ foreach(TEST ${UNIT_TESTS})
     if(WIN32)
         set_tests_properties(${TEST} PROPERTIES
             ENVIRONMENT_MODIFICATION
-                "PATH=path_list_prepend:$<TARGET_FILE_DIR:threading>;$<TARGET_FILE_DIR:logging>;$<TARGET_FILE_DIR:helper>"
+                "PATH=path_list_prepend:$<TARGET_FILE_DIR:threading>"
+                "PATH=path_list_prepend:$<TARGET_FILE_DIR:logging>"
+                "PATH=path_list_prepend:$<TARGET_FILE_DIR:helper>"
         )
     endif()
 endforeach()
