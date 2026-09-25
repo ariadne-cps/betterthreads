@@ -52,13 +52,7 @@ class ThreadManager : public ThreadRegistryInterface {
     virtual ~ThreadManager() = default;
 
     //! \brief The singleton instance of this class
-    static ThreadManager& instance() {
-        auto& logger = Logger::instance();
-        static ThreadManager instance;
-        if (not logger.has_thread_registry_attached())
-            logger.attach_thread_registry(&instance);
-        return instance;
-    }
+    static ThreadManager& instance();
 
     //! \brief Whether threads have already been registered
     bool has_threads_registered() const override;

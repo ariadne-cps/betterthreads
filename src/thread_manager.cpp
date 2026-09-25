@@ -32,6 +32,14 @@ using Logging::Logger;
 
 ThreadManager::ThreadManager() : _maximum_concurrency(std::thread::hardware_concurrency()), _concurrency(0), _pool(0) {}
 
+ThreadManager& ThreadManager::instance() {
+    auto& logger = Logger::instance();
+    static ThreadManager instance;
+    if (not logger.has_thread_registry_attached())
+        logger.attach_thread_registry(&instance);
+    return instance;
+}
+
 bool ThreadManager::has_threads_registered() const {
     return _pool.num_threads() > 0;
 }

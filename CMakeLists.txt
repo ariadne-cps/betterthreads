@@ -1,54 +1,23 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.15)
 
 project(Threading VERSION 1.0)
 
-option(COVERAGE "Enable coverage reporting" OFF)
+include("${CMAKE_CURRENT_SOURCE_DIR}/submodules/configuration/cmake/ProjectOptions.cmake")
+
 option(THREAD_SANITIZER "Enable ThreadSanitizer" OFF)
+
+setup_project()
 
 if(COVERAGE AND THREAD_SANITIZER)
     message(FATAL_ERROR "COVERAGE and THREAD_SANITIZER cannot be enabled together.")
 endif()
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/submodules/configuration/cmake")
-include(ProjectOptions)
-include(CoverageSupport)
-include(DependencyChecks)
-
-enable_project_options()
-enable_project_coverage()
-
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.20)
-        message(FATAL_ERROR "MSVC version must be at least 19.20!")
-    endif()
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10.2)
-        message(FATAL_ERROR "GCC version must be at least 10.2!")
-    endif()
-elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 11.0)
-        message(FATAL_ERROR "Clang version must be at least 11.0!")
-    endif()
-else()
-    message(WARNING "You are using an unsupported compiler! MSVC, GCC and Clang are supported.")
-endif()
-
-
 if(THREAD_SANITIZER)
-    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
-        message(FATAL_ERROR "ThreadSanitizer requires GCC or Clang.")
+    if(WIN32 OR NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+        message(FATAL_ERROR "ThreadSanitizer requires GCC or Clang on Unix-like systems.")
     endif()
     add_compile_options(-fsanitize=thread -fno-omit-frame-pointer)
     add_link_options(-fsanitize=thread)
-endif()
-
-if(WIN32)
-    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
-    set(LIBRARY_KIND STATIC)
-elseif(COVERAGE)
-    set(LIBRARY_KIND STATIC)
-else()
-    set(LIBRARY_KIND SHARED)
 endif()
 
 include(CheckTypeSize)
@@ -111,40 +80,18 @@ if(NOT TARGET threading)
     add_subdirectory(src)
 
     add_library(threading ${LIBRARY_KIND} $<TARGET_OBJECTS:THREADING_SRC>)
+    set_target_properties(threading PROPERTIES OUTPUT_NAME "ariadne-threading")
 
     add_subdirectory(submodules)
     target_link_libraries(threading logging helper Threads::Threads)
 
-    if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
-        if(NOT TARGET tests)
-            enable_testing()
-            add_subdirectory(test)
-        endif()
+    setup_standalone_project_tests(
+        TARGET threading
+        TEST_DIRECTORY test
+        TEST_TARGET tests
+        SOURCES
+            "${PROJECT_SOURCE_DIR}/include"
+            "${PROJECT_SOURCE_DIR}/src"
+    )
 
-        if(COVERAGE)
-            if(APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang")
-                get_property(
-                    THREADING_TEST_TARGETS
-                    TARGET tests
-                    PROPERTY MANUALLY_ADDED_DEPENDENCIES
-                )
-
-                setup_target_for_coverage_llvm(
-                    NAME coverage
-                    TARGET threading
-                    OBJECTS
-                        ${THREADING_TEST_TARGETS}
-                    DEPENDENCIES tests
-                    SOURCES
-                        "${PROJECT_SOURCE_DIR}/include"
-                        "${PROJECT_SOURCE_DIR}/src"
-                )
-            else()
-                setup_target_for_coverage_gcc(
-                    NAME coverage
-                    DEPENDENCIES tests
-                )
-            endif()
-        endif()
-    endif()
 endif()
