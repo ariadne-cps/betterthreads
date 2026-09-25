@@ -118,14 +118,17 @@ endif()
 if(EXISTS "${PROJECT_SOURCE_DIR}/.git")
     function(threading_gitlink_commit REPOSITORY SUBMODULE_PATH OUTPUT_VARIABLE)
         execute_process(
-            COMMAND "${GIT_EXECUTABLE}" -C "${REPOSITORY}" ls-tree HEAD "${SUBMODULE_PATH}"
-            OUTPUT_VARIABLE ENTRY OUTPUT_STRIP_TRAILING_WHITESPACE
+            COMMAND "${GIT_EXECUTABLE}" -C "${REPOSITORY}" rev-parse "HEAD:${SUBMODULE_PATH}"
+            OUTPUT_VARIABLE COMMIT
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_VARIABLE ERROR_TEXT
             RESULT_VARIABLE RESULT
         )
-        if(NOT RESULT EQUAL 0 OR NOT ENTRY MATCHES "^160000 commit ([0-9a-fA-F]+)[ \\t]")
-            message(FATAL_ERROR "Cannot determine gitlink for ${REPOSITORY}/${SUBMODULE_PATH}")
+        if(NOT RESULT EQUAL 0 OR COMMIT STREQUAL "")
+            message(FATAL_ERROR
+                "Cannot determine gitlink for ${REPOSITORY}/${SUBMODULE_PATH}: ${ERROR_TEXT}")
         endif()
-        set(${OUTPUT_VARIABLE} "${CMAKE_MATCH_1}" PARENT_SCOPE)
+        set(${OUTPUT_VARIABLE} "${COMMIT}" PARENT_SCOPE)
     endfunction()
     threading_gitlink_commit("${PROJECT_SOURCE_DIR}" "submodules/configuration" THREADING_CONFIGURATION_COMMIT)
     threading_gitlink_commit("${PROJECT_SOURCE_DIR}/submodules/logging" "submodules/configuration" LOGGING_CONFIGURATION_COMMIT)
