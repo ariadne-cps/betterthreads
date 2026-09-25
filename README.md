@@ -1,9 +1,9 @@
 # Threading
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Unix](https://github.com/ariadne-cps/betterthreads/actions/workflows/unix.yml/badge.svg)](https://github.com/ariadne-cps/betterthreads/actions/workflows/unix.yml)
-[![Coverage](https://github.com/ariadne-cps/betterthreads/actions/workflows/coverage.yml/badge.svg)](https://github.com/ariadne-cps/betterthreads/actions/workflows/coverage.yml)
-[![codecov](https://codecov.io/gh/ariadne-cps/betterthreads/branch/main/graph/badge.svg)](https://codecov.io/gh/ariadne-cps/betterthreads)
+[![Unix](https://github.com/ariadne-cps/threading/actions/workflows/unix.yml/badge.svg)](https://github.com/ariadne-cps/threading/actions/workflows/unix.yml)
+[![Coverage](https://github.com/ariadne-cps/threading/actions/workflows/coverage.yml/badge.svg)](https://github.com/ariadne-cps/threading/actions/workflows/coverage.yml)
+[![codecov](https://codecov.io/gh/ariadne-cps/threading/branch/main/graph/badge.svg)](https://codecov.io/gh/ariadne-cps/threading)
 
 A small C++20 library for thread management, thread pools, buffered workers and concurrent workloads, with integration with [Logging](https://github.com/ariadne-cps/logging).
 
@@ -22,8 +22,8 @@ A small C++20 library for thread management, thread pools, buffered workers and 
 Clone with submodules:
 
 ```bash
-git clone --recurse-submodules https://github.com/ariadne-cps/betterthreads.git
-cd betterthreads
+git clone --recurse-submodules https://github.com/ariadne-cps/threading.git
+cd threading
 mkdir build
 cd build
 cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release

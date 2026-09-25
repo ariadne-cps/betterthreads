@@ -68,7 +68,7 @@ jobs:
 
     - name: Configure CMake
       working-directory: ${{runner.workspace}}/build
-      run: cmake ${{runner.workspace}}/betterthreads -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=${{matrix.config.cxx-cmd}} -G Ninja
+      run: cmake ${{runner.workspace}}/threading -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=${{matrix.config.cxx-cmd}} -G Ninja
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
