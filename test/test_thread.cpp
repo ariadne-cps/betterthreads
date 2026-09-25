@@ -22,6 +22,7 @@
  *  along with Threading.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <chrono>
 #include "helper/test.hpp"
 #include "helper/container.hpp"
 #include "logging/logging.hpp"
