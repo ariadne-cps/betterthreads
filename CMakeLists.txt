@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.10)
 
 project(Threading VERSION 1.0)
 
-option(COVERAGE "Enable coverage reporting" OFF)
 option(THREAD_SANITIZER "Enable ThreadSanitizer" OFF)
 
 if(COVERAGE AND THREAD_SANITIZER)
@@ -10,18 +9,14 @@ if(COVERAGE AND THREAD_SANITIZER)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/submodules/configuration/cmake")
+include(ProjectOptions)
+include(CoverageSupport)
+include(DependencyChecks)
 
-if(COVERAGE)
-    if(APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang")
-        include(LLVMCodeCoverage)
-        append_llvm_coverage_compiler_flags()
-    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-        include(GCCCodeCoverage)
-        append_gcc_coverage_compiler_flags()
-    else()
-        message(FATAL_ERROR "Coverage is supported only with GCC or macOS AppleClang/Clang.")
-    endif()
-endif()
+option(COVERAGE "Enable coverage reporting" OFF)
+
+enable_project_options()
+enable_project_coverage()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.20)
@@ -55,23 +50,6 @@ elseif(COVERAGE)
     set(LIBRARY_KIND STATIC)
 else()
     set(LIBRARY_KIND SHARED)
-endif()
-
-set(CMAKE_MACOSX_RPATH 1)
-set(BUILD_SHARED_LIBS ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-if(NOT WIN32)
-    set(ANY_TARGET_WARN all extra pedantic sign-conversion cast-qual disabled-optimization
-        init-self missing-include-dirs sign-promo switch-default undef redundant-decls
-        strict-aliasing unused-parameter shadow error)
-    foreach(WARN ${ANY_TARGET_WARN})
-        add_compile_options(-W${WARN})
-    endforeach()
-else()
-    add_compile_options(/WX)
 endif()
 
 include(CheckTypeSize)
@@ -116,32 +94,12 @@ endif()
 
 
 if(EXISTS "${PROJECT_SOURCE_DIR}/.git")
-    function(threading_gitlink_commit REPOSITORY SUBMODULE_PATH OUTPUT_VARIABLE)
-        execute_process(
-            COMMAND "${GIT_EXECUTABLE}" -C "${REPOSITORY}" rev-parse "HEAD:${SUBMODULE_PATH}"
-            OUTPUT_VARIABLE COMMIT
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            ERROR_VARIABLE ERROR_TEXT
-            RESULT_VARIABLE RESULT
-        )
-        if(NOT RESULT EQUAL 0 OR COMMIT STREQUAL "")
-            message(FATAL_ERROR
-                "Cannot determine gitlink for ${REPOSITORY}/${SUBMODULE_PATH}: ${ERROR_TEXT}")
-        endif()
-        set(${OUTPUT_VARIABLE} "${COMMIT}" PARENT_SCOPE)
-    endfunction()
-    threading_gitlink_commit("${PROJECT_SOURCE_DIR}" "submodules/configuration" THREADING_CONFIGURATION_COMMIT)
-    threading_gitlink_commit("${PROJECT_SOURCE_DIR}/submodules/logging" "submodules/configuration" LOGGING_CONFIGURATION_COMMIT)
-    threading_gitlink_commit("${PROJECT_SOURCE_DIR}/submodules/helper" "submodules/configuration" HELPER_CONFIGURATION_COMMIT)
-    if(NOT THREADING_CONFIGURATION_COMMIT STREQUAL LOGGING_CONFIGURATION_COMMIT OR
-       NOT THREADING_CONFIGURATION_COMMIT STREQUAL HELPER_CONFIGURATION_COMMIT)
-        message(FATAL_ERROR
-            "Inconsistent configuration dependency:\n"
-            "  Threading: ${THREADING_CONFIGURATION_COMMIT}\n"
-            "  Logging:   ${LOGGING_CONFIGURATION_COMMIT}\n"
-            "  Helper:    ${HELPER_CONFIGURATION_COMMIT}")
-    endif()
-    message(STATUS "Verified shared configuration commit: ${THREADING_CONFIGURATION_COMMIT}")
+    require_same_dependency_commit(Configuration
+        REFERENCES
+            "${PROJECT_SOURCE_DIR}|submodules/configuration"
+            "${PROJECT_SOURCE_DIR}/submodules/logging|submodules/configuration"
+            "${PROJECT_SOURCE_DIR}/submodules/helper|submodules/configuration"
+    )
 endif()
 
 find_package(Threads REQUIRED)
