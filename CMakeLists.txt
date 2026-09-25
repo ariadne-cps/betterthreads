@@ -147,13 +147,13 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/submodules/logging/include)
 include_directories(${PROJECT_SOURCE_DIR}/submodules/helper/include)
 
-if(NOT TARGET betterthreads)
+if(NOT TARGET threading)
     add_subdirectory(src)
 
-    add_library(betterthreads ${LIBRARY_KIND} $<TARGET_OBJECTS:THREADING_SRC>)
+    add_library(threading ${LIBRARY_KIND} $<TARGET_OBJECTS:THREADING_SRC>)
 
     add_subdirectory(submodules)
-    target_link_libraries(betterthreads logging helper ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(threading logging helper Threads::Threads)
 
     if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
         if(NOT TARGET tests)
@@ -171,7 +171,7 @@ if(NOT TARGET betterthreads)
 
                 setup_target_for_coverage_llvm(
                     NAME coverage
-                    TARGET betterthreads
+                    TARGET threading
                     OBJECTS
                         ${THREADING_TEST_TARGETS}
                     DEPENDENCIES tests
