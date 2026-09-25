@@ -10,7 +10,7 @@ set(UNIT_TESTS
 
 foreach(TEST ${UNIT_TESTS})
     add_executable(${TEST} ${TEST}.cpp)
-    target_link_libraries(${TEST} betterthreads)
+    target_link_libraries(${TEST} threading)
     add_test(${TEST} ${TEST})
 endforeach()
 

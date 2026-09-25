@@ -1,4 +1,4 @@
-set(LIBRARY_NAME BETTERTHREADS_SRC)
+set(LIBRARY_NAME THREADING_SRC)
 
 add_library(${LIBRARY_NAME} OBJECT
         thread.cpp
@@ -7,7 +7,6 @@ add_library(${LIBRARY_NAME} OBJECT
         workload_advancement.cpp
         thread_manager.cpp
         )
-
 
 foreach(WARN ${LIBRARY_EXCLUSIVE_WARN})
     target_compile_options(${LIBRARY_NAME} PUBLIC -W${WARN})

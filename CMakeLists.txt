@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(BetterThreads VERSION 1.0)
+project(Threading VERSION 1.0)
 
 option(COVERAGE "Enable coverage reporting" OFF)
 option(THREAD_SANITIZER "Enable ThreadSanitizer" OFF)
@@ -9,7 +9,7 @@ if(COVERAGE AND THREAD_SANITIZER)
     message(FATAL_ERROR "COVERAGE and THREAD_SANITIZER cannot be enabled together.")
 endif()
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/submodules/configuration/cmake")
 
 if(COVERAGE)
     if(APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang")
@@ -86,54 +86,74 @@ find_package(Git)
 if(GIT_FOUND)
     if (NOT EXISTS ${PROJECT_SOURCE_DIR}/.git) # Manages the case when an archive is used
         execute_process(COMMAND git init WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_QUIET ERROR_QUIET)
-        execute_process(COMMAND rm -Rf ${PROJECT_SOURCE_DIR}/submodules/conclog OUTPUT_QUIET ERROR_QUIET)
-        execute_process(COMMAND git submodule add -f https://github.com/ariadne-cps/conclog submodules/conclog WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_QUIET ERROR_QUIET)
+        execute_process(COMMAND rm -Rf ${PROJECT_SOURCE_DIR}/submodules/logging OUTPUT_QUIET ERROR_QUIET)
+        execute_process(COMMAND git submodule add -f https://github.com/ariadne-cps/logging submodules/logging WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_QUIET ERROR_QUIET)
         execute_process(COMMAND rm -Rf ${PROJECT_SOURCE_DIR}/submodules/helper OUTPUT_QUIET ERROR_QUIET)
         execute_process(COMMAND git submodule add -f https://github.com/ariadne-cps/helper submodules/helper WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_QUIET ERROR_QUIET)
+        execute_process(COMMAND rm -Rf ${PROJECT_SOURCE_DIR}/submodules/configuration OUTPUT_QUIET ERROR_QUIET)
+        execute_process(COMMAND git submodule add -f https://github.com/ariadne-cps/configuration submodules/configuration WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_QUIET ERROR_QUIET)
     endif()
     message(STATUS "Getting all submodules if not downloaded already...")
     execute_process(COMMAND git submodule update --init --recursive WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_QUIET ERROR_QUIET)
-    if(NOT EXISTS ${PROJECT_SOURCE_DIR}/submodules/conclog/CMakeLists.txt)
-        message(ERROR "ConcLog download failure")
+    if(NOT EXISTS ${PROJECT_SOURCE_DIR}/submodules/logging/CMakeLists.txt)
+        message(ERROR "Logging download failure")
     else()
-        message(STATUS "ConcLog submodule found")
+        message(STATUS "Logging submodule found")
     endif()
     if(NOT EXISTS ${PROJECT_SOURCE_DIR}/submodules/helper/CMakeLists.txt)
         message(ERROR "Helper download failure")
     else()
         message(STATUS "Helper submodule found")
     endif()
+    if(NOT EXISTS ${PROJECT_SOURCE_DIR}/submodules/configuration/cmake)
+        message(ERROR "Configuration download failure")
+    else()
+        message(STATUS "Configuration submodule found")
+    endif()
 else()
     message(FATAL_ERROR "Git not found, no submodules could be downloaded")
 endif()
 
-if (NOT EXISTS ${PROJECT_SOURCE_DIR}/submodules/.symbolic)
-    execute_process(COMMAND mkdir ${PROJECT_SOURCE_DIR}/submodules/.symbolic)
-    message(STATUS "Created symbolic links directory for submodules")
-endif()
 
-if (NOT EXISTS ${PROJECT_SOURCE_DIR}/submodules/.symbolic/conclog)
-    execute_process(COMMAND ln -s ${PROJECT_SOURCE_DIR}/submodules/conclog/include ${PROJECT_SOURCE_DIR}/submodules/.symbolic/conclog)
-    message(STATUS "Created symbolic link to ConcLog submodule")
-endif()
-
-if (NOT EXISTS ${PROJECT_SOURCE_DIR}/submodules/.symbolic/helper)
-    execute_process(COMMAND ln -s ${PROJECT_SOURCE_DIR}/submodules/helper/include ${PROJECT_SOURCE_DIR}/submodules/.symbolic/helper)
-    message(STATUS "Created symbolic link to Helper submodule")
+if(EXISTS "${PROJECT_SOURCE_DIR}/.git")
+    function(threading_gitlink_commit REPOSITORY SUBMODULE_PATH OUTPUT_VARIABLE)
+        execute_process(
+            COMMAND "${GIT_EXECUTABLE}" -C "${REPOSITORY}" ls-tree HEAD "${SUBMODULE_PATH}"
+            OUTPUT_VARIABLE ENTRY OUTPUT_STRIP_TRAILING_WHITESPACE
+            RESULT_VARIABLE RESULT
+        )
+        if(NOT RESULT EQUAL 0 OR NOT ENTRY MATCHES "^160000 commit ([0-9a-fA-F]+)[ \\t]")
+            message(FATAL_ERROR "Cannot determine gitlink for ${REPOSITORY}/${SUBMODULE_PATH}")
+        endif()
+        set(${OUTPUT_VARIABLE} "${CMAKE_MATCH_1}" PARENT_SCOPE)
+    endfunction()
+    threading_gitlink_commit("${PROJECT_SOURCE_DIR}" "submodules/configuration" THREADING_CONFIGURATION_COMMIT)
+    threading_gitlink_commit("${PROJECT_SOURCE_DIR}/submodules/logging" "submodules/configuration" LOGGING_CONFIGURATION_COMMIT)
+    threading_gitlink_commit("${PROJECT_SOURCE_DIR}/submodules/helper" "submodules/configuration" HELPER_CONFIGURATION_COMMIT)
+    if(NOT THREADING_CONFIGURATION_COMMIT STREQUAL LOGGING_CONFIGURATION_COMMIT OR
+       NOT THREADING_CONFIGURATION_COMMIT STREQUAL HELPER_CONFIGURATION_COMMIT)
+        message(FATAL_ERROR
+            "Inconsistent configuration dependency:\n"
+            "  Threading: ${THREADING_CONFIGURATION_COMMIT}\n"
+            "  Logging:   ${LOGGING_CONFIGURATION_COMMIT}\n"
+            "  Helper:    ${HELPER_CONFIGURATION_COMMIT}")
+    endif()
+    message(STATUS "Verified shared configuration commit: ${THREADING_CONFIGURATION_COMMIT}")
 endif()
 
 find_package(Threads REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
-include_directories(BEFORE ${PROJECT_SOURCE_DIR}/submodules/.symbolic)
+include_directories(${PROJECT_SOURCE_DIR}/submodules/logging/include)
+include_directories(${PROJECT_SOURCE_DIR}/submodules/helper/include)
 
 if(NOT TARGET betterthreads)
     add_subdirectory(src)
 
-    add_library(betterthreads ${LIBRARY_KIND} $<TARGET_OBJECTS:BETTERTHREADS_SRC>)
+    add_library(betterthreads ${LIBRARY_KIND} $<TARGET_OBJECTS:THREADING_SRC>)
 
     add_subdirectory(submodules)
-    target_link_libraries(betterthreads conclog helper ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(betterthreads logging helper ${CMAKE_THREAD_LIBS_INIT})
 
     if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
         if(NOT TARGET tests)
@@ -144,7 +164,7 @@ if(NOT TARGET betterthreads)
         if(COVERAGE)
             if(APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang")
                 get_property(
-                    BETTERTHREADS_TEST_TARGETS
+                    THREADING_TEST_TARGETS
                     TARGET tests
                     PROPERTY MANUALLY_ADDED_DEPENDENCIES
                 )
@@ -153,7 +173,7 @@ if(NOT TARGET betterthreads)
                     NAME coverage
                     TARGET betterthreads
                     OBJECTS
-                        ${BETTERTHREADS_TEST_TARGETS}
+                        ${THREADING_TEST_TARGETS}
                     DEPENDENCIES tests
                     SOURCES
                         "${PROJECT_SOURCE_DIR}/include"

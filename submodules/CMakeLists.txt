@@ -1,2 +1,2 @@
-add_subdirectory(conclog)
+add_subdirectory(logging)
 add_subdirectory(helper)

@@ -6,32 +6,28 @@
  ****************************************************************************/
 
 /*
- * This file is part of BetterThreads, under the MIT license.
+ *  This file is part of Threading.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is furnished
- * to do so, subject to the following conditions:
+ *  Threading is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ *  Threading is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *  You should have received a copy of the GNU General Public License
+ *  along with Threading.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /*! \file buffered_thread.hpp
  *  \brief A wrapper for smart handling of a thread with a buffer for incoming tasks
  */
 
-#ifndef BETTERTHREADS_BUFFERED_THREAD_HPP
-#define BETTERTHREADS_BUFFERED_THREAD_HPP
+#ifndef THREADING_BUFFERED_THREAD_HPP
+#define THREADING_BUFFERED_THREAD_HPP
 
 #include <utility>
 #include <thread>
@@ -39,12 +35,12 @@
 #include <mutex>
 #include <atomic>
 #include <functional>
-#include "helper/string.hpp"
-#include "templates.hpp"
-#include "buffer.hpp"
-#include "using.hpp"
+#include "string.hpp"
+#include "threading/templates.hpp"
+#include "threading/buffer.hpp"
+#include "threading/using.hpp"
 
-namespace BetterThreads {
+namespace Threading {
 
 using Helper::String;
 
@@ -99,6 +95,6 @@ template<class F, class... AS> auto BufferedThread::enqueue(F&& f, AS&&... args)
     return result;
 }
 
-} // namespace BetterThreads
+} // namespace Threading
 
-#endif // BETTERTHREADS_BUFFERED_THREAD_HPP
+#endif // THREADING_BUFFERED_THREAD_HPP
