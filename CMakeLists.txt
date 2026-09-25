@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(Threading VERSION 1.0)
 
+option(COVERAGE "Enable coverage reporting" OFF)
 option(THREAD_SANITIZER "Enable ThreadSanitizer" OFF)
 
 if(COVERAGE AND THREAD_SANITIZER)
@@ -12,8 +13,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/submodules/configurat
 include(ProjectOptions)
 include(CoverageSupport)
 include(DependencyChecks)
-
-option(COVERAGE "Enable coverage reporting" OFF)
 
 enable_project_options()
 enable_project_coverage()
