@@ -22,6 +22,7 @@
  *  along with Threading.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <chrono>
 #include <thread>
 #include "helper/test.hpp"
 #include "threading/thread_manager.hpp"
