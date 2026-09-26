@@ -17,7 +17,7 @@ foreach(TEST ${UNIT_TESTS})
             ENVIRONMENT_MODIFICATION
                 "PATH=path_list_prepend:$<TARGET_FILE_DIR:threading>"
                 "PATH=path_list_prepend:$<TARGET_FILE_DIR:logging>"
-                "PATH=path_list_prepend:$<TARGET_FILE_DIR:helper>"
+                "PATH=path_list_prepend:$<TARGET_FILE_DIR:utility>"
             TIMEOUT 120
         )
     endif()
