@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - fix/windows-buffered-thread-hang
   pull_request:
 
 jobs:
@@ -37,4 +38,4 @@ jobs:
 
     - name: Test
       working-directory: ${{runner.workspace}}/build
-      run: ctest -C ${{matrix.config.build-type}} --output-on-failure
+      run: ctest -C ${{matrix.config.build-type}} -V
