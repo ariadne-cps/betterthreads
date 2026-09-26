@@ -38,8 +38,8 @@
 
 namespace Threading {
 
-using Logging::ThreadRegistryInterface;
-using Logging::Logger;
+using Ariadne::Logging::ThreadRegistryInterface;
+using Ariadne::Logging::Logger;
 
 //! \brief Manages threads based on concurrency availability.
 class ThreadManager : public ThreadRegistryInterface {
