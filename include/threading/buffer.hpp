@@ -33,7 +33,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <queue>
-#include "helper/macros.hpp"
+#include "utility/macros.hpp"
 #include "threading/using.hpp"
 
 namespace Threading {
@@ -45,7 +45,7 @@ class BufferInterruptPullingException : public std::exception { };
 template<class E> class Buffer
 {
   public:
-    Buffer(size_t capacity) : _capacity(capacity), _interrupt(false) { HELPER_PRECONDITION(capacity > 0); }
+    Buffer(size_t capacity) : _capacity(capacity), _interrupt(false) { ARIADNE_PRECONDITION(capacity > 0); }
 
     //! \brief Push an object into the buffer
     //! \details Will block if the capacity has been reached
@@ -84,9 +84,9 @@ template<class E> class Buffer
 
     //! \brief Change the capacity
     void set_capacity(size_t capacity) {
-        HELPER_PRECONDITION(capacity>0);
+        ARIADNE_PRECONDITION(capacity>0);
         lock_guard<mutex> locker(mux);
-        HELPER_ASSERT_MSG(capacity>=_queue.size(),"Reducing capacity below currenty buffer size is not allowed.");
+        ARIADNE_ASSERT_MSG(capacity>=_queue.size(),"Reducing capacity below currenty buffer size is not allowed.");
         _capacity = capacity;
         _not_full.notify_all();
     }

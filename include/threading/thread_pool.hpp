@@ -31,7 +31,7 @@
 
 #include <queue>
 #include "logging/logging.hpp"
-#include "helper/container.hpp"
+#include "utility/container.hpp"
 #include "threading/thread.hpp"
 #include "threading/templates.hpp"
 #include "threading/using.hpp"
@@ -39,7 +39,7 @@
 namespace Threading {
 
 using std::make_shared;
-using Helper::List;
+using Ariadne::Utility::List;
 
 const String THREAD_POOL_DEFAULT_NAME = "thr";
 

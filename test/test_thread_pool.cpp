@@ -23,7 +23,7 @@
  */
 
 #include <chrono>
-#include "helper/test.hpp"
+#include "utility/test.hpp"
 #include "logging/logging.hpp"
 #include "logging/thread_registry_interface.hpp"
 #include "threading/thread_pool.hpp"
@@ -32,7 +32,7 @@ using namespace Threading;
 
 using namespace std::chrono_literals;
 
-class ThreadRegistry : public Logging::ThreadRegistryInterface {
+class ThreadRegistry : public Ariadne::Logging::ThreadRegistryInterface {
 public:
     ThreadRegistry() : _threads_registered(0) { }
     bool has_threads_registered() const override { return _threads_registered > 0; }
@@ -45,45 +45,45 @@ class TestSmartThreadPool {
   public:
 
     void test_construct_thread_name() const {
-        HELPER_TEST_EQUALS(construct_thread_name("name",9,9),"name9");
-        HELPER_TEST_EQUALS(construct_thread_name("name",9,10),"name09");
-        HELPER_TEST_EQUALS(construct_thread_name("name",10,11),"name10");
+        ARIADNE_TEST_EQUALS(construct_thread_name("name",9,9),"name9");
+        ARIADNE_TEST_EQUALS(construct_thread_name("name",9,10),"name09");
+        ARIADNE_TEST_EQUALS(construct_thread_name("name",10,11),"name10");
     }
 
     void test_construct() {
         auto max_concurrency = std::thread::hardware_concurrency();
         ThreadPool pool(max_concurrency);
-        HELPER_TEST_EQUALS(pool.num_threads(),max_concurrency);
-        HELPER_TEST_EQUALS(pool.queue_size(),0);
+        ARIADNE_TEST_EQUALS(pool.num_threads(),max_concurrency);
+        ARIADNE_TEST_EQUALS(pool.queue_size(),0);
     }
 
     void test_construct_empty() {
         ThreadPool pool(0);
-        HELPER_TEST_EQUALS(pool.num_threads(),0);
+        ARIADNE_TEST_EQUALS(pool.num_threads(),0);
         VoidFunction fn([]{ std::this_thread::sleep_for(100ms); });
         pool.enqueue(fn);
-        HELPER_TEST_EQUALS(pool.queue_size(),1);
+        ARIADNE_TEST_EQUALS(pool.queue_size(),1);
     }
 
     void test_construct_with_name() {
         ThreadPool pool(1);
-        HELPER_TEST_EQUALS(pool.name(),THREAD_POOL_DEFAULT_NAME);
+        ARIADNE_TEST_EQUALS(pool.name(),THREAD_POOL_DEFAULT_NAME);
         ThreadPool pool2(1,"name");
-        HELPER_TEST_EQUALS(pool2.name(),"name");
+        ARIADNE_TEST_EQUALS(pool2.name(),"name");
     }
 
     void test_execute_single() {
         ThreadPool pool(1);
-        HELPER_TEST_EQUALS(pool.num_threads(),1);
+        ARIADNE_TEST_EQUALS(pool.num_threads(),1);
         auto future = pool.enqueue([]{});
         future.get();
-        HELPER_TEST_EQUALS(pool.queue_size(),0);
+        ARIADNE_TEST_EQUALS(pool.queue_size(),0);
     }
 
     void test_exception() {
         ThreadPool pool(1);
         auto future = pool.enqueue([]{ throw new std::exception(); });
-        HELPER_TEST_FAIL(future.get());
+        ARIADNE_TEST_FAIL(future.get());
     }
 
     void test_destroy_before_completion() {
@@ -93,19 +93,19 @@ class TestSmartThreadPool {
 
     void test_execute_multiple_sequentially() {
         ThreadPool pool(1);
-        HELPER_TEST_EQUALS(pool.num_threads(),1);
-        HELPER_TEST_EQUALS(pool.queue_size(),0);
+        ARIADNE_TEST_EQUALS(pool.num_threads(),1);
+        ARIADNE_TEST_EQUALS(pool.queue_size(),0);
         std::vector<future<void>> futures;
         for (size_t i=0; i<2; ++i)
             futures.push_back(pool.enqueue([]{}));
         for (auto& future : futures) future.get();
-        HELPER_TEST_EQUALS(pool.queue_size(),0);
+        ARIADNE_TEST_EQUALS(pool.queue_size(),0);
     }
 
     void test_execute_multiple_concurrently() {
         size_t num_threads = 2;
         ThreadPool pool(num_threads);
-        HELPER_TEST_EQUALS(pool.num_threads(),2);
+        ARIADNE_TEST_EQUALS(pool.num_threads(),2);
         std::atomic<size_t> active = 0;
         std::atomic<size_t> maximum = 0;
         std::atomic<bool> release = false;
@@ -122,7 +122,7 @@ class TestSmartThreadPool {
         while (maximum.load() < num_threads) std::this_thread::yield();
         release = true;
         for (auto& future : futures) future.get();
-        HELPER_TEST_EQUALS(maximum.load(),num_threads);
+        ARIADNE_TEST_EQUALS(maximum.load(),num_threads);
     }
 
     void test_execute_multiple_concurrently_sequentially() {
@@ -132,7 +132,7 @@ class TestSmartThreadPool {
         for (size_t i=0; i<2*num_threads; ++i)
             futures.push_back(pool.enqueue([]{}));
         for (auto& future : futures) future.get();
-        HELPER_TEST_EQUALS(pool.queue_size(),0);
+        ARIADNE_TEST_EQUALS(pool.queue_size(),0);
     }
 
     void test_process_on_atomic_type() {
@@ -153,43 +153,43 @@ class TestSmartThreadPool {
             actual_sum += results[i].get();
             expected_sum += (i+1)*(i+1);
         }
-        HELPER_TEST_EQUALS(x.load(),2*max_concurrency);
-        HELPER_TEST_EQUAL(actual_sum,expected_sum);
+        ARIADNE_TEST_EQUALS(x.load(),2*max_concurrency);
+        ARIADNE_TEST_EQUAL(actual_sum,expected_sum);
     }
 
     void test_set_num_threads_up_statically() const {
         ThreadPool pool(0);
-        HELPER_TEST_EXECUTE(pool.set_num_threads(1));
-        HELPER_TEST_EQUALS(pool.num_threads(),1);
-        HELPER_TEST_EXECUTE(pool.set_num_threads(3));
-        HELPER_TEST_EQUALS(pool.num_threads(),3);
+        ARIADNE_TEST_EXECUTE(pool.set_num_threads(1));
+        ARIADNE_TEST_EQUALS(pool.num_threads(),1);
+        ARIADNE_TEST_EXECUTE(pool.set_num_threads(3));
+        ARIADNE_TEST_EQUALS(pool.num_threads(),3);
     }
 
     void test_set_num_threads_same_statically() const {
         ThreadPool pool(3);
-        HELPER_TEST_EXECUTE(pool.set_num_threads(3));
-        HELPER_TEST_EQUALS(pool.num_threads(),3);
+        ARIADNE_TEST_EXECUTE(pool.set_num_threads(3));
+        ARIADNE_TEST_EQUALS(pool.num_threads(),3);
     }
 
     void test_set_num_threads_down_statically() const {
         ThreadPool pool(3);
-        HELPER_TEST_EXECUTE(pool.set_num_threads(1));
-        HELPER_TEST_EQUAL(pool.num_threads(),1);
+        ARIADNE_TEST_EXECUTE(pool.set_num_threads(1));
+        ARIADNE_TEST_EQUAL(pool.num_threads(),1);
     }
 
     void test_set_num_threads_up_dynamically() const {
         ThreadPool pool(0);
         auto first = pool.enqueue([]{});
-        HELPER_TEST_EQUALS(pool.queue_size(),1);
-        HELPER_TEST_EXECUTE(pool.set_num_threads(1));
-        HELPER_TEST_EQUALS(pool.num_threads(),1);
+        ARIADNE_TEST_EQUALS(pool.queue_size(),1);
+        ARIADNE_TEST_EXECUTE(pool.set_num_threads(1));
+        ARIADNE_TEST_EQUALS(pool.num_threads(),1);
         first.get();
-        HELPER_TEST_EQUALS(pool.queue_size(),0);
+        ARIADNE_TEST_EQUALS(pool.queue_size(),0);
 
         auto second = pool.enqueue([]{});
         auto third = pool.enqueue([]{});
-        HELPER_TEST_EXECUTE(pool.set_num_threads(3));
-        HELPER_TEST_EQUALS(pool.num_threads(),3);
+        ARIADNE_TEST_EXECUTE(pool.set_num_threads(3));
+        ARIADNE_TEST_EQUALS(pool.num_threads(),3);
         second.get();
         third.get();
     }
@@ -200,10 +200,10 @@ class TestSmartThreadPool {
         std::vector<future<void>> futures;
         for (size_t i=0; i<5; ++i)
             futures.push_back(pool.enqueue(fn));
-        HELPER_TEST_EXECUTE(pool.set_num_threads(2));
-        HELPER_TEST_EQUAL(pool.num_threads(),2);
+        ARIADNE_TEST_EXECUTE(pool.set_num_threads(2));
+        ARIADNE_TEST_EQUAL(pool.num_threads(),2);
         for (auto& future : futures) future.get();
-        HELPER_TEST_EQUALS(pool.queue_size(),0);
+        ARIADNE_TEST_EQUALS(pool.queue_size(),0);
     }
 
 
@@ -213,8 +213,8 @@ class TestSmartThreadPool {
     void test_shrink_from_worker_is_rejected() {
         ThreadPool pool(2);
         auto future = pool.enqueue([&pool] { pool.set_num_threads(0); });
-        HELPER_TEST_FAIL(future.get())
-        HELPER_TEST_EQUALS(pool.num_threads(),2)
+        ARIADNE_TEST_FAIL(future.get())
+        ARIADNE_TEST_EQUALS(pool.num_threads(),2)
     }
 
     void test_resize_repeatedly() const {
@@ -227,7 +227,7 @@ class TestSmartThreadPool {
             pool.set_num_threads(4);
         }
         pool.set_num_threads(0);
-        HELPER_TEST_EQUALS(completed,320)
+        ARIADNE_TEST_EQUALS(completed,320)
     }
 
     void test_set_num_threads_to_zero_dynamically() const {
@@ -253,44 +253,44 @@ class TestSmartThreadPool {
         for (auto& future : running) future.get();
         shrink.get();
 
-        HELPER_TEST_EQUAL(pool.num_threads(),0);
+        ARIADNE_TEST_EQUAL(pool.num_threads(),0);
         auto started_after_shrink = queued_started.load();
-        HELPER_TEST_ASSERT(started_after_shrink <= 2)
+        ARIADNE_TEST_ASSERT(started_after_shrink <= 2)
 
         pool.set_num_threads(1);
         queued1.get();
         queued2.get();
 
-        HELPER_TEST_EQUALS(queued_started.load(),2)
-        HELPER_TEST_EQUALS(pool.queue_size(),0)
+        ARIADNE_TEST_EQUALS(queued_started.load(),2)
+        ARIADNE_TEST_EQUALS(pool.queue_size(),0)
     }
 
     void test() {
-        HELPER_TEST_CALL(test_construct_thread_name());
-        HELPER_TEST_CALL(test_construct());
-        HELPER_TEST_CALL(test_construct_empty());
-        HELPER_TEST_CALL(test_construct_with_name());
-        HELPER_TEST_CALL(test_execute_single());
-        HELPER_TEST_CALL(test_exception());
-        HELPER_TEST_CALL(test_destroy_before_completion());
-        HELPER_TEST_CALL(test_execute_multiple_sequentially());
-        HELPER_TEST_CALL(test_execute_multiple_concurrently());
-        HELPER_TEST_CALL(test_execute_multiple_concurrently_sequentially());
-        HELPER_TEST_CALL(test_process_on_atomic_type());
-        HELPER_TEST_CALL(test_set_num_threads_up_statically());
-        HELPER_TEST_CALL(test_set_num_threads_same_statically());
-        HELPER_TEST_CALL(test_set_num_threads_down_statically());
-        HELPER_TEST_CALL(test_set_num_threads_up_dynamically());
-        HELPER_TEST_CALL(test_set_num_threads_down_dynamically());
-        HELPER_TEST_CALL(test_shrink_from_worker_is_rejected());
-        HELPER_TEST_CALL(test_resize_repeatedly());
-        HELPER_TEST_CALL(test_set_num_threads_to_zero_dynamically());
+        ARIADNE_TEST_CALL(test_construct_thread_name());
+        ARIADNE_TEST_CALL(test_construct());
+        ARIADNE_TEST_CALL(test_construct_empty());
+        ARIADNE_TEST_CALL(test_construct_with_name());
+        ARIADNE_TEST_CALL(test_execute_single());
+        ARIADNE_TEST_CALL(test_exception());
+        ARIADNE_TEST_CALL(test_destroy_before_completion());
+        ARIADNE_TEST_CALL(test_execute_multiple_sequentially());
+        ARIADNE_TEST_CALL(test_execute_multiple_concurrently());
+        ARIADNE_TEST_CALL(test_execute_multiple_concurrently_sequentially());
+        ARIADNE_TEST_CALL(test_process_on_atomic_type());
+        ARIADNE_TEST_CALL(test_set_num_threads_up_statically());
+        ARIADNE_TEST_CALL(test_set_num_threads_same_statically());
+        ARIADNE_TEST_CALL(test_set_num_threads_down_statically());
+        ARIADNE_TEST_CALL(test_set_num_threads_up_dynamically());
+        ARIADNE_TEST_CALL(test_set_num_threads_down_dynamically());
+        ARIADNE_TEST_CALL(test_shrink_from_worker_is_rejected());
+        ARIADNE_TEST_CALL(test_resize_repeatedly());
+        ARIADNE_TEST_CALL(test_set_num_threads_to_zero_dynamically());
     }
 };
 
 int main() {
     ThreadRegistry registry;
-    Logging::Logger::instance().attach_thread_registry(&registry);
+    Ariadne::Logging::Logger::instance().attach_thread_registry(&registry);
     TestSmartThreadPool().test();
-    return HELPER_TEST_FAILURES;
+    return ARIADNE_TEST_FAILURES;
 }

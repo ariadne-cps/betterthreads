@@ -28,8 +28,8 @@
 
 namespace Threading {
 
-using Logging::Logger;
-using Helper::to_string;
+using Ariadne::Logging::Logger;
+using Ariadne::Utility::to_string;
 
 BufferedThread::BufferedThread(String name)
         : _name(name), _task_buffer(1), _got_id_future(_got_id_promise.get_future())

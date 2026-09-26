@@ -26,7 +26,7 @@
 #include <vector>
 #include <atomic>
 #include <limits>
-#include "helper/test.hpp"
+#include "utility/test.hpp"
 #include "threading/buffer.hpp"
 
 using namespace Threading;
@@ -36,43 +36,43 @@ class TestBuffer {
 
     void test_construct() {
         Buffer<size_t> buffer(2);
-        HELPER_TEST_EQUALS(buffer.size(),0);
-        HELPER_TEST_EQUALS(buffer.capacity(),2);
+        ARIADNE_TEST_EQUALS(buffer.size(),0);
+        ARIADNE_TEST_EQUALS(buffer.capacity(),2);
     }
 
     void test_construct_invalid() {
-        HELPER_TEST_FAIL(Buffer<size_t>(0));
+        ARIADNE_TEST_FAIL(Buffer<size_t>(0));
     }
 
     void test_set_capacity_when_empty() {
         Buffer<size_t> buffer(2);
         buffer.set_capacity(5);
-        HELPER_TEST_EQUALS(buffer.capacity(),5);
+        ARIADNE_TEST_EQUALS(buffer.capacity(),5);
         buffer.set_capacity(3);
-        HELPER_TEST_EQUALS(buffer.capacity(),3);
-        HELPER_TEST_FAIL(buffer.set_capacity(0));
+        ARIADNE_TEST_EQUALS(buffer.capacity(),3);
+        ARIADNE_TEST_FAIL(buffer.set_capacity(0));
     }
 
     void test_set_capacity_when_filled() {
         Buffer<size_t> buffer(2);
         buffer.push(4);
         buffer.push(2);
-        HELPER_TEST_EXECUTE(buffer.set_capacity(5));
-        HELPER_TEST_FAIL(buffer.set_capacity(1));
+        ARIADNE_TEST_EXECUTE(buffer.set_capacity(5));
+        ARIADNE_TEST_FAIL(buffer.set_capacity(1));
         buffer.pull();
-        HELPER_TEST_EXECUTE(buffer.set_capacity(1));
+        ARIADNE_TEST_EXECUTE(buffer.set_capacity(1));
     }
 
     void test_single_buffer() {
         Buffer<size_t> buffer(2);
         buffer.push(4);
         buffer.push(2);
-        HELPER_TEST_EQUALS(buffer.size(),2);
+        ARIADNE_TEST_EQUALS(buffer.size(),2);
         auto o1 = buffer.pull();
         auto o2 = buffer.pull();
-        HELPER_TEST_EQUALS(buffer.size(),0);
-        HELPER_TEST_EQUALS(o1,4);
-        HELPER_TEST_EQUALS(o2,2);
+        ARIADNE_TEST_EQUALS(buffer.size(),0);
+        ARIADNE_TEST_EQUALS(o1,4);
+        ARIADNE_TEST_EQUALS(o2,2);
     }
 
     void test_io_buffer() {
@@ -92,14 +92,14 @@ class TestBuffer {
         ib.push(4);
         ib.push(2);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        HELPER_TEST_EQUALS(ib.size(),0);
-        HELPER_TEST_EQUALS(ob.size(),2);
+        ARIADNE_TEST_EQUALS(ib.size(),0);
+        ARIADNE_TEST_EQUALS(ob.size(),2);
         auto o1 = ob.pull();
-        HELPER_TEST_EQUALS(ob.size(),1);
-        HELPER_TEST_EQUALS(o1,4);
+        ARIADNE_TEST_EQUALS(ob.size(),1);
+        ARIADNE_TEST_EQUALS(o1,4);
         auto o2 = ob.pull();
-        HELPER_TEST_EQUALS(ob.size(),0);
-        HELPER_TEST_EQUALS(o2,2);
+        ARIADNE_TEST_EQUALS(ob.size(),0);
+        ARIADNE_TEST_EQUALS(o2,2);
         ib.interrupt_consuming();
         thread.join();
     }
@@ -137,22 +137,22 @@ class TestBuffer {
         for (size_t i=0; i<consumers; ++i) buffer.push(stop);
         for (auto& thread : consumer_threads) thread.join();
 
-        HELPER_TEST_EQUALS(consumed.load(),producers*per_producer)
-        HELPER_TEST_EQUALS(buffer.size(),0)
+        ARIADNE_TEST_EQUALS(consumed.load(),producers*per_producer)
+        ARIADNE_TEST_EQUALS(buffer.size(),0)
     }
 
     void test() {
-        HELPER_TEST_CALL(test_construct());
-        HELPER_TEST_CALL(test_construct_invalid());
-        HELPER_TEST_CALL(test_set_capacity_when_empty());
-        HELPER_TEST_CALL(test_set_capacity_when_filled());
-        HELPER_TEST_CALL(test_single_buffer());
-        HELPER_TEST_CALL(test_io_buffer());
-        HELPER_TEST_CALL(test_multiple_producers_consumers());
+        ARIADNE_TEST_CALL(test_construct());
+        ARIADNE_TEST_CALL(test_construct_invalid());
+        ARIADNE_TEST_CALL(test_set_capacity_when_empty());
+        ARIADNE_TEST_CALL(test_set_capacity_when_filled());
+        ARIADNE_TEST_CALL(test_single_buffer());
+        ARIADNE_TEST_CALL(test_io_buffer());
+        ARIADNE_TEST_CALL(test_multiple_producers_consumers());
     }
 };
 
 int main() {
     TestBuffer().test();
-    return HELPER_TEST_FAILURES;
+    return ARIADNE_TEST_FAILURES;
 }

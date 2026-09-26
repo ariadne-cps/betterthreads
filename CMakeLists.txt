@@ -34,8 +34,8 @@ if(GIT_FOUND)
         execute_process(COMMAND git init WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_QUIET ERROR_QUIET)
         execute_process(COMMAND rm -Rf ${PROJECT_SOURCE_DIR}/submodules/logging OUTPUT_QUIET ERROR_QUIET)
         execute_process(COMMAND git submodule add -f https://github.com/ariadne-cps/logging submodules/logging WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_QUIET ERROR_QUIET)
-        execute_process(COMMAND rm -Rf ${PROJECT_SOURCE_DIR}/submodules/helper OUTPUT_QUIET ERROR_QUIET)
-        execute_process(COMMAND git submodule add -f https://github.com/ariadne-cps/helper submodules/helper WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_QUIET ERROR_QUIET)
+        execute_process(COMMAND rm -Rf ${PROJECT_SOURCE_DIR}/submodules/utility OUTPUT_QUIET ERROR_QUIET)
+        execute_process(COMMAND git submodule add -f https://github.com/ariadne-cps/utility submodules/utility WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_QUIET ERROR_QUIET)
         execute_process(COMMAND rm -Rf ${PROJECT_SOURCE_DIR}/submodules/configuration OUTPUT_QUIET ERROR_QUIET)
         execute_process(COMMAND git submodule add -f https://github.com/ariadne-cps/configuration submodules/configuration WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_QUIET ERROR_QUIET)
     endif()
@@ -46,10 +46,10 @@ if(GIT_FOUND)
     else()
         message(STATUS "Logging submodule found")
     endif()
-    if(NOT EXISTS ${PROJECT_SOURCE_DIR}/submodules/helper/CMakeLists.txt)
-        message(ERROR "Helper download failure")
+    if(NOT EXISTS ${PROJECT_SOURCE_DIR}/submodules/utility/CMakeLists.txt)
+        message(ERROR "Utility download failure")
     else()
-        message(STATUS "Helper submodule found")
+        message(STATUS "Utility submodule found")
     endif()
     if(NOT EXISTS ${PROJECT_SOURCE_DIR}/submodules/configuration/cmake)
         message(ERROR "Configuration download failure")
@@ -66,7 +66,7 @@ if(EXISTS "${PROJECT_SOURCE_DIR}/.git")
         REFERENCES
             "${PROJECT_SOURCE_DIR}|submodules/configuration"
             "${PROJECT_SOURCE_DIR}/submodules/logging|submodules/configuration"
-            "${PROJECT_SOURCE_DIR}/submodules/helper|submodules/configuration"
+            "${PROJECT_SOURCE_DIR}/submodules/utility|submodules/configuration"
     )
 endif()
 
@@ -74,7 +74,7 @@ find_package(Threads REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/submodules/logging/include)
-include_directories(${PROJECT_SOURCE_DIR}/submodules/helper/include)
+include_directories(${PROJECT_SOURCE_DIR}/submodules/utility/include)
 
 if(NOT TARGET threading)
     add_subdirectory(src)
@@ -83,7 +83,7 @@ if(NOT TARGET threading)
     set_target_properties(threading PROPERTIES OUTPUT_NAME "ariadne-threading")
 
     add_subdirectory(submodules)
-    target_link_libraries(threading logging helper Threads::Threads)
+    target_link_libraries(threading logging utility Threads::Threads)
 
     setup_standalone_project_tests(
         TARGET threading

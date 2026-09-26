@@ -22,7 +22,7 @@
  *  along with Threading.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "helper/macros.hpp"
+#include "utility/macros.hpp"
 #include "threading/workload_advancement.hpp"
 
 namespace Threading {
@@ -52,21 +52,21 @@ size_t WorkloadAdvancement::total() const {
 }
 
 void WorkloadAdvancement::add_to_waiting(size_t n) {
-    HELPER_PRECONDITION(n > 0);
+    ARIADNE_PRECONDITION(n > 0);
     lock_guard<mutex> lock(_mux);
     _num_waiting+=n;
 }
 
 void WorkloadAdvancement::add_to_processing(size_t n) {
     lock_guard<mutex> lock(_mux);
-    HELPER_PRECONDITION(n <= _num_waiting);
+    ARIADNE_PRECONDITION(n <= _num_waiting);
     _num_waiting-=n;
     _num_processing+=n;
 }
 
 void WorkloadAdvancement::add_to_completed(size_t n) {
     lock_guard<mutex> lock(_mux);
-    HELPER_PRECONDITION(n <=_num_processing);
+    ARIADNE_PRECONDITION(n <=_num_processing);
     _num_processing-=n;
     _num_completed+=n;
 }

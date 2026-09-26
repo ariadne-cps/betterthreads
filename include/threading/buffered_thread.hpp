@@ -35,14 +35,14 @@
 #include <mutex>
 #include <atomic>
 #include <functional>
-#include "helper/string.hpp"
+#include "utility/string.hpp"
 #include "threading/templates.hpp"
 #include "threading/buffer.hpp"
 #include "threading/using.hpp"
 
 namespace Threading {
 
-using Helper::String;
+using Ariadne::Utility::String;
 
 //! \brief A class for handling a thread that accepts multiple tasks to be enqueued.
 //! \details It allows to wait for the start of the \a task before extracting the thread id, which is held along with

@@ -22,13 +22,13 @@
  *  along with Threading.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "helper/macros.hpp"
+#include "utility/macros.hpp"
 #include "logging/logging.hpp"
 #include "threading/thread_manager.hpp"
 
 namespace Threading {
 
-using Logging::Logger;
+using Ariadne::Logging::Logger;
 
 ThreadManager::ThreadManager() : _maximum_concurrency(std::thread::hardware_concurrency()), _concurrency(0), _pool(0) {}
 
@@ -53,7 +53,7 @@ size_t ThreadManager::concurrency() const {
 }
 
 void ThreadManager::set_concurrency(size_t value) {
-    HELPER_PRECONDITION(value <= _maximum_concurrency);
+    ARIADNE_PRECONDITION(value <= _maximum_concurrency);
     lock_guard<mutex> lock(_concurrency_change_mutex);
     auto previous = _concurrency.exchange(value);
     try {
@@ -70,19 +70,19 @@ void ThreadManager::set_maximum_concurrency() {
 
 void ThreadManager::set_logging_immediate_scheduler() const {
     lock_guard<mutex> lock(_concurrency_change_mutex);
-    HELPER_PRECONDITION(_concurrency.load() == 0)
+    ARIADNE_PRECONDITION(_concurrency.load() == 0)
     Logger::instance().use_immediate_scheduler();
 }
 
 void ThreadManager::set_logging_blocking_scheduler() const {
     lock_guard<mutex> lock(_concurrency_change_mutex);
-    HELPER_PRECONDITION(_concurrency.load() == 0)
+    ARIADNE_PRECONDITION(_concurrency.load() == 0)
     Logger::instance().use_blocking_scheduler();
 }
 
 void ThreadManager::set_logging_nonblocking_scheduler() const {
     lock_guard<mutex> lock(_concurrency_change_mutex);
-    HELPER_PRECONDITION(_concurrency.load() == 0)
+    ARIADNE_PRECONDITION(_concurrency.load() == 0)
     Logger::instance().use_nonblocking_scheduler();
 }
 

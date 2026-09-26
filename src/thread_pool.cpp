@@ -94,7 +94,7 @@ void ThreadPool::set_num_threads(size_t number) {
     if (number < old_size) {
         auto caller_id = std::this_thread::get_id();
         for (auto const& thread : _threads)
-            HELPER_PRECONDITION(thread->id() != caller_id);
+            ARIADNE_PRECONDITION(thread->id() != caller_id);
     }
     if (number > old_size) {
         {

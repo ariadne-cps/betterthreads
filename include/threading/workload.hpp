@@ -31,8 +31,8 @@
 
 #include <functional>
 #include <iomanip>
-#include "helper/container.hpp"
-#include "helper/tuple.hpp"
+#include "utility/container.hpp"
+#include "utility/tuple.hpp"
 #include "logging/progress_indicator.hpp"
 #include "threading/workload_interface.hpp"
 #include "threading/thread_manager.hpp"
@@ -40,12 +40,12 @@
 
 namespace Threading {
 
-using Logging::ProgressIndicator;
-using Logging::LogScopeManager;
-using Logging::Logger;
+using Ariadne::Logging::ProgressIndicator;
+using Ariadne::Logging::LogScopeManager;
+using Ariadne::Logging::Logger;
 
-using Helper::List;
-using Helper::make_lpair;
+using Ariadne::Utility::List;
+using Ariadne::Utility::make_lpair;
 
 using std::mutex;
 using std::unique_lock;
@@ -61,8 +61,8 @@ class WorkloadCore {
 
     void _process() {
         unique_lock<mutex> process_lock(_process_mutex,std::try_to_lock);
-        HELPER_PRECONDITION(process_lock.owns_lock());
-        _log_scope_manager.reset(new LogScopeManager(HELPER_PRETTY_FUNCTION,0));
+        ARIADNE_PRECONDITION(process_lock.owns_lock());
+        _log_scope_manager.reset(new LogScopeManager(ARIADNE_PRETTY_FUNCTION,0));
         _logger_level = Logger::instance().current_level();
         for (;;) {
             unique_lock<mutex> lock(_element_availability_mutex);

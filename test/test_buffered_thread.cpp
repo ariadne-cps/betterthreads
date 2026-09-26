@@ -22,16 +22,16 @@
  *  along with Threading.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "helper/test.hpp"
-#include "helper/container.hpp"
+#include "utility/test.hpp"
+#include "utility/container.hpp"
 #include "logging/logging.hpp"
 #include "logging/thread_registry_interface.hpp"
 #include "threading/buffered_thread.hpp"
 
 using namespace Threading;
-using namespace Helper;
+using namespace Ariadne::Utility;
 
-class ThreadRegistry : public Logging::ThreadRegistryInterface {
+class ThreadRegistry : public Ariadne::Logging::ThreadRegistryInterface {
 public:
     ThreadRegistry() : _threads_registered(0) { }
     bool has_threads_registered() const override { return _threads_registered > 0; }
@@ -45,19 +45,19 @@ class TestBufferedThread {
 
     void test_create() const {
         BufferedThread thread1("thr");
-        HELPER_TEST_EXECUTE(thread1.id());
-        HELPER_TEST_EQUALS(thread1.name(),"thr");
-        HELPER_TEST_EQUALS(thread1.queue_size(),0);
-        HELPER_TEST_EQUALS(thread1.queue_capacity(),1);
+        ARIADNE_TEST_EXECUTE(thread1.id());
+        ARIADNE_TEST_EQUALS(thread1.name(),"thr");
+        ARIADNE_TEST_EQUALS(thread1.queue_size(),0);
+        ARIADNE_TEST_EQUALS(thread1.queue_capacity(),1);
         BufferedThread thread2;
-        HELPER_TEST_EQUALS(to_string(thread2.id()),thread2.name());
+        ARIADNE_TEST_EQUALS(to_string(thread2.id()),thread2.name());
     }
 
     void test_set_queue_capacity() const {
         BufferedThread thread;
-        HELPER_TEST_FAIL(thread.set_queue_capacity(0));
-        HELPER_TEST_EXECUTE(thread.set_queue_capacity(2));
-        HELPER_TEST_EXECUTE(thread.set_queue_capacity(1));
+        ARIADNE_TEST_FAIL(thread.set_queue_capacity(0));
+        ARIADNE_TEST_EXECUTE(thread.set_queue_capacity(2));
+        ARIADNE_TEST_EXECUTE(thread.set_queue_capacity(1));
     }
 
     void test_destroy_before_completion() const {
@@ -68,7 +68,7 @@ class TestBufferedThread {
     void test_exception() const {
         BufferedThread thread;
         auto future = thread.enqueue([] { throw new std::exception(); });
-        HELPER_TEST_FAIL(future.get());
+        ARIADNE_TEST_FAIL(future.get());
     }
 
     void test_has_queued_tasks() const {
@@ -76,9 +76,9 @@ class TestBufferedThread {
         thread.set_queue_capacity(2);
         thread.enqueue([] { std::this_thread::sleep_for(std::chrono::milliseconds(100)); });
         thread.enqueue([] { std::this_thread::sleep_for(std::chrono::milliseconds(100)); });
-        HELPER_TEST_ASSERT(thread.queue_size()>0);
+        ARIADNE_TEST_ASSERT(thread.queue_size()>0);
         std::this_thread::sleep_for(std::chrono::milliseconds(300));
-        HELPER_TEST_EQUALS(thread.queue_size(),0);
+        ARIADNE_TEST_EQUALS(thread.queue_size(),0);
     }
 
     void test_set_queue_capacity_down_failure() const {
@@ -88,16 +88,16 @@ class TestBufferedThread {
         thread.enqueue(fn);
         thread.enqueue(fn);
         thread.enqueue(fn);
-        HELPER_TEST_FAIL(thread.set_queue_capacity(1));
+        ARIADNE_TEST_FAIL(thread.set_queue_capacity(1));
         std::this_thread::sleep_for(std::chrono::milliseconds(400));
-        HELPER_TEST_EXECUTE(thread.set_queue_capacity(1));
+        ARIADNE_TEST_EXECUTE(thread.set_queue_capacity(1));
     }
 
     void test_task_return() const {
         BufferedThread thread;
         auto result = thread.enqueue([] { return 42; });
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        HELPER_TEST_EQUALS(result.get(),42);
+        ARIADNE_TEST_EQUALS(result.get(),42);
     }
 
     void test_task_capture() const {
@@ -105,7 +105,7 @@ class TestBufferedThread {
         BufferedThread thread;
         auto future = thread.enqueue([&a] { a++; });
         future.get();
-        HELPER_TEST_EQUALS(a,1);
+        ARIADNE_TEST_EQUALS(a,1);
     }
 
     void test_task_arguments() const {
@@ -115,7 +115,7 @@ class TestBufferedThread {
         auto future = thread.enqueue([](int a, int b) { return a * b; }, x, y);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         auto r = future.get();
-        HELPER_TEST_EQUALS(r,15);
+        ARIADNE_TEST_EQUALS(r,15);
     }
 
     void test_multiple_tasks() const {
@@ -130,12 +130,12 @@ class TestBufferedThread {
             return a;
         });
         int r = future.get();
-        HELPER_TEST_EQUALS(r,42);
+        ARIADNE_TEST_EQUALS(r,42);
     }
 
     void test_atomic_multiple_threads() const {
         size_t n_threads = 10*std::thread::hardware_concurrency();
-        HELPER_TEST_PRINT(n_threads);
+        ARIADNE_TEST_PRINT(n_threads);
         List<shared_ptr<BufferedThread>> threads;
 
         std::atomic<size_t> a = 0;
@@ -145,29 +145,29 @@ class TestBufferedThread {
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        HELPER_TEST_EQUALS(a,n_threads);
+        ARIADNE_TEST_EQUALS(a,n_threads);
         threads.clear();
     }
 
     void test() {
-        HELPER_TEST_CALL(test_create());
-        HELPER_TEST_CALL(test_set_queue_capacity());
-        HELPER_TEST_CALL(test_destroy_before_completion());
-        HELPER_TEST_CALL(test_exception());
-        HELPER_TEST_CALL(test_has_queued_tasks());
-        HELPER_TEST_CALL(test_set_queue_capacity_down_failure());
-        HELPER_TEST_CALL(test_task_return());
-        HELPER_TEST_CALL(test_task_capture());
-        HELPER_TEST_CALL(test_task_arguments());
-        HELPER_TEST_CALL(test_multiple_tasks());
-        HELPER_TEST_CALL(test_atomic_multiple_threads());
+        ARIADNE_TEST_CALL(test_create());
+        ARIADNE_TEST_CALL(test_set_queue_capacity());
+        ARIADNE_TEST_CALL(test_destroy_before_completion());
+        ARIADNE_TEST_CALL(test_exception());
+        ARIADNE_TEST_CALL(test_has_queued_tasks());
+        ARIADNE_TEST_CALL(test_set_queue_capacity_down_failure());
+        ARIADNE_TEST_CALL(test_task_return());
+        ARIADNE_TEST_CALL(test_task_capture());
+        ARIADNE_TEST_CALL(test_task_arguments());
+        ARIADNE_TEST_CALL(test_multiple_tasks());
+        ARIADNE_TEST_CALL(test_atomic_multiple_threads());
     }
 
 };
 
 int main() {
     ThreadRegistry registry;
-    Logging::Logger::instance().attach_thread_registry(&registry);
+    Ariadne::Logging::Logger::instance().attach_thread_registry(&registry);
     TestBufferedThread().test();
-    return HELPER_TEST_FAILURES;
+    return ARIADNE_TEST_FAILURES;
 }

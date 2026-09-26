@@ -23,19 +23,19 @@
  */
 
 #include <chrono>
-#include "helper/test.hpp"
-#include "helper/container.hpp"
+#include "utility/test.hpp"
+#include "utility/container.hpp"
 #include "logging/logging.hpp"
 #include "logging/thread_registry_interface.hpp"
 #include "threading/thread.hpp"
 #include "threading/using.hpp"
 
 using namespace Threading;
-using namespace Helper;
+using namespace Ariadne::Utility;
 
 using namespace std::chrono_literals;
 
-class ThreadRegistry : public Logging::ThreadRegistryInterface {
+class ThreadRegistry : public Ariadne::Logging::ThreadRegistryInterface {
 public:
     ThreadRegistry() : _threads_registered(0) { }
     bool has_threads_registered() const override { return _threads_registered > 0; }
@@ -49,10 +49,10 @@ class TestThread {
 
     void test_create() const {
         Thread thread1([]{}, "thr");
-        HELPER_TEST_EXECUTE(thread1.id())
-        HELPER_TEST_EQUALS(thread1.name(),"thr")
+        ARIADNE_TEST_EXECUTE(thread1.id())
+        ARIADNE_TEST_EQUALS(thread1.name(),"thr")
         Thread thread2([]{});
-        HELPER_TEST_EQUALS(to_string(thread2.id()),thread2.name())
+        ARIADNE_TEST_EQUALS(to_string(thread2.id()),thread2.name())
     }
 
     void test_destroy_before_completion() const {
@@ -63,14 +63,14 @@ class TestThread {
         std::atomic<int> a = 0;
         Thread thread([&a] { a++; });
         std::this_thread::sleep_for(10ms);
-        HELPER_TEST_EQUALS(a.load(),1)
-        HELPER_TEST_ASSERT(thread.exception() == nullptr)
+        ARIADNE_TEST_EQUALS(a.load(),1)
+        ARIADNE_TEST_ASSERT(thread.exception() == nullptr)
     }
 
     void test_exception() const {
         Thread thread([] { throw new std::exception(); });
         std::this_thread::sleep_for(10ms);
-        HELPER_TEST_ASSERT(thread.exception() != nullptr)
+        ARIADNE_TEST_ASSERT(thread.exception() != nullptr)
     }
 
 
@@ -80,7 +80,7 @@ class TestThread {
         {
             Thread thread([&executions] { ++executions; },"inactive",false);
         }
-        HELPER_TEST_EQUALS(executions.load(),0)
+        ARIADNE_TEST_EQUALS(executions.load(),0)
     }
 
     void test_concurrent_activate() const {
@@ -89,12 +89,12 @@ class TestThread {
         Thread first([&thread] { thread.activate(); },"activator1");
         Thread second([&thread] { thread.activate(); },"activator2");
         std::this_thread::sleep_for(10ms);
-        HELPER_TEST_EQUALS(executions,1)
+        ARIADNE_TEST_EQUALS(executions,1)
     }
 
     void test_atomic_multiple_threads() const {
         size_t n_threads = 10*std::thread::hardware_concurrency();
-        HELPER_TEST_PRINT(n_threads)
+        ARIADNE_TEST_PRINT(n_threads)
         List<shared_ptr<Thread>> threads;
 
         std::atomic<size_t> a = 0;
@@ -103,25 +103,25 @@ class TestThread {
         }
 
         std::this_thread::sleep_for(100ms);
-        HELPER_TEST_EQUALS(a,n_threads)
+        ARIADNE_TEST_EQUALS(a,n_threads)
         threads.clear();
     }
 
     void test() {
-        HELPER_TEST_CALL(test_create())
-        HELPER_TEST_CALL(test_destroy_before_completion())
-        HELPER_TEST_CALL(test_task())
-        HELPER_TEST_CALL(test_exception())
-        HELPER_TEST_CALL(test_destroy_inactive())
-        HELPER_TEST_CALL(test_concurrent_activate())
-        HELPER_TEST_CALL(test_atomic_multiple_threads())
+        ARIADNE_TEST_CALL(test_create())
+        ARIADNE_TEST_CALL(test_destroy_before_completion())
+        ARIADNE_TEST_CALL(test_task())
+        ARIADNE_TEST_CALL(test_exception())
+        ARIADNE_TEST_CALL(test_destroy_inactive())
+        ARIADNE_TEST_CALL(test_concurrent_activate())
+        ARIADNE_TEST_CALL(test_atomic_multiple_threads())
     }
 
 };
 
 int main() {
     ThreadRegistry registry;
-    Logging::Logger::instance().attach_thread_registry(&registry);
+    Ariadne::Logging::Logger::instance().attach_thread_registry(&registry);
     TestThread().test();
-    return HELPER_TEST_FAILURES;
+    return ARIADNE_TEST_FAILURES;
 }

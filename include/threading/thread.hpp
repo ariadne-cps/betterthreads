@@ -35,8 +35,8 @@
 #include <mutex>
 #include <atomic>
 #include <functional>
-#include "helper/macros.hpp"
-#include "helper/string.hpp"
+#include "utility/macros.hpp"
+#include "utility/string.hpp"
 
 namespace Threading {
 
@@ -46,7 +46,7 @@ using std::promise;
 using std::future;
 
 using VoidFunction = std::function<void(void)>;
-using Helper::String;
+using Ariadne::Utility::String;
 
 //! \brief A class for handling a thread for a pool in a smarter way.
 //! \details It allows to wait for the start of the \a task before extracting the thread id, which is held along with
