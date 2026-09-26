@@ -2,7 +2,15 @@ cmake_minimum_required(VERSION 3.15)
 
 project(Threading VERSION 1.0)
 
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/submodules/configuration/cmake/ProjectOptions.cmake")
+    message(FATAL_ERROR
+        "Git submodules are not initialized. "
+        "Run 'git submodule update --init --recursive' before configuring the project.")
+endif()
+
 include("${CMAKE_CURRENT_SOURCE_DIR}/submodules/configuration/cmake/ProjectOptions.cmake")
+
+require_initialized_submodules()
 
 option(THREAD_SANITIZER "Enable ThreadSanitizer" OFF)
 
@@ -19,47 +27,6 @@ if(THREAD_SANITIZER)
     add_compile_options(-fsanitize=thread -fno-omit-frame-pointer)
     add_link_options(-fsanitize=thread)
 endif()
-
-include(CheckTypeSize)
-check_type_size("size_t" SIZEOF_SIZET)
-message(STATUS "size_t size: ${SIZEOF_SIZET}")
-check_type_size("long int" SIZEOF_LONG_INT)
-message(STATUS "long int size: ${SIZEOF_LONG_INT}")
-check_type_size("long long int" SIZEOF_LONG_LONG_INT)
-message(STATUS "long long int size: ${SIZEOF_LONG_LONG_INT}")
-
-find_package(Git)
-if(GIT_FOUND)
-    if (NOT EXISTS ${PROJECT_SOURCE_DIR}/.git) # Manages the case when an archive is used
-        execute_process(COMMAND git init WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_QUIET ERROR_QUIET)
-        execute_process(COMMAND rm -Rf ${PROJECT_SOURCE_DIR}/submodules/logging OUTPUT_QUIET ERROR_QUIET)
-        execute_process(COMMAND git submodule add -f https://github.com/ariadne-cps/logging submodules/logging WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_QUIET ERROR_QUIET)
-        execute_process(COMMAND rm -Rf ${PROJECT_SOURCE_DIR}/submodules/utility OUTPUT_QUIET ERROR_QUIET)
-        execute_process(COMMAND git submodule add -f https://github.com/ariadne-cps/utility submodules/utility WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_QUIET ERROR_QUIET)
-        execute_process(COMMAND rm -Rf ${PROJECT_SOURCE_DIR}/submodules/configuration OUTPUT_QUIET ERROR_QUIET)
-        execute_process(COMMAND git submodule add -f https://github.com/ariadne-cps/configuration submodules/configuration WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_QUIET ERROR_QUIET)
-    endif()
-    message(STATUS "Getting all submodules if not downloaded already...")
-    execute_process(COMMAND git submodule update --init --recursive WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_QUIET ERROR_QUIET)
-    if(NOT EXISTS ${PROJECT_SOURCE_DIR}/submodules/logging/CMakeLists.txt)
-        message(ERROR "Logging download failure")
-    else()
-        message(STATUS "Logging submodule found")
-    endif()
-    if(NOT EXISTS ${PROJECT_SOURCE_DIR}/submodules/utility/CMakeLists.txt)
-        message(ERROR "Utility download failure")
-    else()
-        message(STATUS "Utility submodule found")
-    endif()
-    if(NOT EXISTS ${PROJECT_SOURCE_DIR}/submodules/configuration/cmake)
-        message(ERROR "Configuration download failure")
-    else()
-        message(STATUS "Configuration submodule found")
-    endif()
-else()
-    message(FATAL_ERROR "Git not found, no submodules could be downloaded")
-endif()
-
 
 if(EXISTS "${PROJECT_SOURCE_DIR}/.git")
     require_same_dependency_commit(Configuration
