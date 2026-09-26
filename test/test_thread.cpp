@@ -121,7 +121,10 @@ class TestThread {
 
 int main() {
     ThreadRegistry registry;
+    std::cerr << "[threading] test_thread: before attach registry" << std::endl;
     Ariadne::Logging::Logger::instance().attach_thread_registry(&registry);
+    std::cerr << "[threading] test_thread: after attach registry" << std::endl;
     TestThread().test();
+    std::cerr << "[threading] test_thread: tests complete" << std::endl;
     return ARIADNE_TEST_FAILURES;
 }
